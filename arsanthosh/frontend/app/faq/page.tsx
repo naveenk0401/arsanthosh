@@ -80,7 +80,7 @@ export default function FAQPage() {
             <section className="py-16 md:py-24 bg-white border-t">
                 <div className="max-w-4xl mx-auto px-6 text-center">
                     <h3 className="text-2xl md:text-3xl font-bold mb-6">Still have questions?</h3>
-                    <p className="text-gray-500 mb-10 text-sm md:text-base">We're here to help you understand every step of your project's lifecycle.</p>
+                    <p className="text-gray-500 mb-10 text-sm md:text-base">We&apos;re here to help you understand every step of your project&apos;s lifecycle.</p>
                     <div className="flex flex-col sm:flex-row justify-center gap-6">
                         <button className="bg-[var(--primary)] text-white px-10 py-4 font-bold hover:bg-black transition-all uppercase tracking-widest text-xs">Chat on WhatsApp</button>
                         <button className="border border-gray-900 px-10 py-4 font-bold hover:bg-gray-900 hover:text-white transition-all uppercase tracking-widest text-xs">Email Us Directly</button>

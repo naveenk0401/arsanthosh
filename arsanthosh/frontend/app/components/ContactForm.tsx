@@ -3,8 +3,8 @@ export default function ContactForm() {
         <section className="py-16 md:py-24 bg-white">
             <div className="max-w-4xl mx-auto px-6">
                 <div className="text-center mb-10 md:mb-12">
-                    <h2 className="text-2xl md:text-4xl font-bold mb-4">Let's Discuss Your Project</h2>
-                    <p className="text-xs md:text-base text-[var(--muted)] px-4 md:px-0">Fill out the form below and we'll get back to you within 24 hours.</p>
+                    <h2 className="text-2xl md:text-4xl font-bold mb-4">Let&apos;s Discuss Your Project</h2>
+                    <p className="text-xs md:text-base text-[var(--muted)] px-4 md:px-0">Fill out the form below and we&apos;ll get back to you within 24 hours.</p>
                 </div>
 
                 <form className="space-y-4 md:space-y-6 bg-gray-50 p-6 md:p-12 border border-gray-100 rounded-sm">

@@ -29,7 +29,7 @@ export default function VerifyOTPPage() {
                         </svg>
                     </div>
                     <h1 className="text-3xl font-bold mb-2">Check Your Email</h1>
-                    <p className="text-[var(--muted)] text-sm">We've sent a 6-digit verification code to your email.</p>
+                    <p className="text-[var(--muted)] text-sm">We&apos;ve sent a 6-digit verification code to your email.</p>
                 </div>
 
                 <form onSubmit={handleVerify} className="space-y-6">
@@ -53,7 +53,7 @@ export default function VerifyOTPPage() {
                 </form>
 
                 <p className="mt-8 text-center text-sm text-[var(--muted)]">
-                    Didn't receive the code?{" "}
+                    Didn&apos;t receive the code?{" "}
                     <button className="text-[var(--accent)] font-bold hover:underline">
                         Resend OTP
                     </button>

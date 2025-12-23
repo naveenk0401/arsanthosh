@@ -32,11 +32,11 @@ export default function ContactPage() {
                             <div>
                                 <h2 className="text-[10px] md:text-sm uppercase tracking-[0.3em] text-[var(--accent)] font-bold mb-4">Contact Us</h2>
                                 <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-                                    Let's Start Your <br />
+                                    Let&apos;s Start Your <br />
                                     <span className="text-[var(--accent)]">Dream Project</span>
                                 </h1>
                                 <p className="mt-6 text-gray-500 max-w-md leading-relaxed">
-                                    Whether you're looking for bespoke interior design or premium hardware solutions, our team is here to help you every step of the way.
+                                    Whether you&apos;re looking for bespoke interior design or premium hardware solutions, our team is here to help you every step of the way.
                                 </p>
                             </div>
 

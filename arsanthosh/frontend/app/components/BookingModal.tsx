@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 
 export default function BookingModal({ isOpen, onCloseAction }: { isOpen: boolean, onCloseAction: () => void }) {
     if (!isOpen) return null;
