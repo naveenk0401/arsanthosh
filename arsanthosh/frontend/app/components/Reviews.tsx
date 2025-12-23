@@ -35,7 +35,7 @@ export default function Reviews() {
                                     ))}
                                 </div>
                                 <p className="text-xs md:text-sm text-[var(--muted)] italic mb-6 leading-relaxed">
-                                    "{review.text}"
+                                    &quot;{review.text}&quot;
                                 </p>
                             </div>
                             <div className="flex items-center gap-3 md:gap-4">

@@ -15,7 +15,7 @@ export default function ThreeDGallery() {
                         <h2 className="text-[10px] md:text-sm uppercase tracking-[0.3em] text-[var(--accent)] font-bold mb-4">Immersion</h2>
                         <h3 className="text-3xl md:text-4xl font-bold">3D Room Previews</h3>
                         <p className="mt-6 text-gray-500 text-sm md:text-base leading-relaxed">
-                            Experience your space before it's built. Our advanced 3D visualization and VR walkthroughs
+                            Experience your space before it&apos;s built. Our advanced 3D visualization and VR walkthroughs
                             allow you to feel the proportions, lighting, and materials of your future project.
                         </p>
                     </div>
