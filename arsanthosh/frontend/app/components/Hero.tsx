@@ -19,7 +19,7 @@ export default function Hero() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 text-white w-full">
         <h2 className="text-[10px] md:text-sm uppercase tracking-[0.3em] text-[var(--accent)] font-bold mb-4">Architecture | Interiors | Products</h2>
-        <h1 className="text-3xl sm:text-5xl md:text-8xl font-bold leading-tight max-w-4xl">
+        <h1 className="text-[28px] sm:text-5xl md:text-8xl font-bold leading-tight max-w-4xl">
           Designing Spaces <br className="hidden md:block" />
           <span className="text-[var(--accent)]">That Inspire Life</span>
         </h1>

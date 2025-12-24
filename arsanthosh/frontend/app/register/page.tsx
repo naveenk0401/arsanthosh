@@ -10,9 +10,9 @@ export default function RegisterPage() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Register data:", formData);
-        // On successful API signup, redirect to OTP verification
-        router.push("/verify-otp");
+        // Mock success
+        localStorage.setItem("user", JSON.stringify({ name: formData.name, email: formData.email }));
+        window.location.href = "/store";
     };
 
     return (

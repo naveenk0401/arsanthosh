@@ -42,8 +42,8 @@ export default function Footer() {
                         <h4 className="font-bold text-[10px] md:text-xs uppercase tracking-[0.2em] text-gray-500">Contact Us</h4>
                         <div className="text-xs md:text-sm text-gray-300 space-y-3">
                             <p className=" leading-relaxed">Balaji Nagar, muthanampalyam<br />Tirupur, Tamil Nadu</p>
-                            <p>Email: hello@arsanthosh.com</p>
-                            <p>Phone: +91 98765 43210</p>
+                            <p>Email: contact@arsanthosh.com</p>
+                            <p>Phone: +91 9843237459</p>
                         </div>
                     </div>
                 </div>

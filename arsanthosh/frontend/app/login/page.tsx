@@ -8,7 +8,9 @@ export default function LoginPage() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Login data:", formData);
+        // Mock success
+        localStorage.setItem("user", JSON.stringify({ email: formData.email, name: "Santhosh User" }));
+        window.location.href = "/store";
     };
 
     return (
