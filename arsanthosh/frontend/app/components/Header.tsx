@@ -10,7 +10,7 @@ export default function Header() {
   const pathname = usePathname();
   const { totalItems, setIsCartOpen } = useCart();
 
-  const isStorePage = pathname === "/store";
+  const isStorePage = pathname?.startsWith("/store");
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b">
