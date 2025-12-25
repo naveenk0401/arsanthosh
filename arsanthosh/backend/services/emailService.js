@@ -7,7 +7,8 @@ const { otpTemplate, orderConfirmationTemplate, welcomeTemplate } = require("../
  */
 class EmailService {
   constructor() {
-    const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT.toString().replace(/['"]/g, '')) : 587;
+    let port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT.toString().replace(/[^0-9]/g, '')) : 587;
+    if (isNaN(port)) port = 587;
 
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.gmail.com",
