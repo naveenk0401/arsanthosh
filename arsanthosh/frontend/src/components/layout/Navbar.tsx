@@ -57,15 +57,30 @@ export default function Navbar() {
           )}
 
           {user ? (
-            <button
-              onClick={logout}
-              className="hidden md:block border border-gray-200 px-6 py-2.5 text-[10px] md:text-xs font-bold hover:bg-black hover:text-white transition-all uppercase tracking-widest"
-            >
-              Logout
-            </button>
+            <div className="hidden md:flex flex-col items-center group cursor-pointer relative" onClick={logout}>
+              <div className="w-8 h-8 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <span className="text-[9px] font-bold uppercase tracking-widest mt-1 text-gray-500 group-hover:text-black transition-colors">
+                {user.name.split(' ')[0]}
+              </span>
+              {/* Tooltip for logout */}
+              <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                Click to Logout
+              </div>
+            </div>
           ) : (
-            <Link href="/login" className="hidden md:block border border-gray-200 px-6 py-2.5 text-[10px] md:text-xs font-bold hover:bg-gray-50 transition-colors uppercase tracking-widest">
-              Login
+            <Link href="/login" className="hidden md:flex flex-col items-center group">
+              <div className="w-8 h-8 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center group-hover:bg-[var(--accent)] group-hover:text-white transition-colors text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <span className="text-[9px] font-bold uppercase tracking-widest mt-1 text-gray-500 group-hover:text-[var(--accent)] transition-colors">
+                Login
+              </span>
             </Link>
           )}
 
@@ -102,21 +117,39 @@ export default function Navbar() {
             <Link href="/contact" className="text-lg font-bold hover:text-[var(--accent)] transition-colors" onClick={() => setIsMenuOpen(false)}>Contact</Link>
             {isAdmin && <Link href="/admin" className="text-lg font-bold text-[var(--accent)] hover:underline" onClick={() => setIsMenuOpen(false)}>Admin Dashboard</Link>}
           </nav>
-          <div className="pt-4 border-t flex flex-col gap-3">
+          <div className="pt-4 border-t">
             {user ? (
-              <button
-                onClick={() => { logout(); setIsMenuOpen(false); }}
-                className="w-full text-center border py-3.5 font-bold uppercase tracking-widest text-sm"
-              >
-                Logout ({user.name})
-              </button>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white border border-gray-100 rounded-full flex items-center justify-center text-[var(--primary)]">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest">{user.name}</p>
+                    <p className="text-[10px] text-gray-400 capitalize">{user.role}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => { logout(); setIsMenuOpen(false); }}
+                  className="text-[10px] font-bold uppercase tracking-widest text-red-500 hover:underline"
+                >
+                  Logout
+                </button>
+              </div>
             ) : (
               <Link
                 href="/login"
-                className="w-full text-center border py-3.5 font-bold uppercase tracking-widest text-sm"
+                className="flex items-center justify-center gap-3 w-full border border-gray-100 py-4 group"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Login
+                <div className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 group-hover:bg-[var(--accent)] group-hover:text-white transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <span className="text-sm font-bold uppercase tracking-widest">Sign In</span>
               </Link>
             )}
           </div>

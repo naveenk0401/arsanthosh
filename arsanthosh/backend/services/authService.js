@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const emailService = require("./emailService");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const AppError = require("../utils/AppError");
 
 /**
@@ -36,13 +37,16 @@ class AuthService {
         const otp = this.generateOTP();
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
-        // Users are auto-approved, admins and super-admins need approval (or first super-admin is manually handled/inited)
+        // Users are auto-approved, admins and super-admins need approval
         const isApproved = role === "user" || !role;
+
+        // Hash password before saving
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await User.create({
             name,
             email,
-            password,
+            password: hashedPassword,
             role: role || "user",
             isVerified: false,
             isApproved,
@@ -112,7 +116,7 @@ class AuthService {
      */
     async login(email, password) {
         const user = await User.findOne({ email });
-        if (!user || !(await user.comparePassword(password))) {
+        if (!user || !(await bcrypt.compare(password, user.password))) {
             throw new AppError("Invalid email or password", 401);
         }
 
