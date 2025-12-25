@@ -5,16 +5,28 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { api } from "@/utils/api";
 
 export default function RegisterPage() {
-    const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+    const [formData, setFormData] = useState({ name: "", email: "", password: "", role: "user" });
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
     const router = useRouter();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Mock success
-        localStorage.setItem("user", JSON.stringify({ name: formData.name, email: formData.email }));
-        window.location.href = "/store";
+        setIsLoading(true);
+        setError("");
+
+        const response = await api.post("/auth/register", formData);
+
+        setIsLoading(false);
+
+        if (response.success) {
+            router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`);
+        } else {
+            setError(response.error?.message || "Registration failed");
+        }
     };
 
     return (
@@ -27,7 +39,36 @@ export default function RegisterPage() {
                         <p className="text-[var(--muted)] text-xs md:text-sm">Join Architect Santhosh for premium design solutions</p>
                     </div>
 
+                    {error && (
+                        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-medium">
+                            {error}
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
+                        <div className="flex gap-4 mb-4">
+                            <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, role: "user" })}
+                                className={`flex-1 py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest border transition-all ${formData.role === "user"
+                                        ? "bg-[var(--primary)] text-white border-[var(--primary)]"
+                                        : "bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-300"
+                                    }`}
+                            >
+                                Customer
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, role: "admin" })}
+                                className={`flex-1 py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest border transition-all ${formData.role === "admin"
+                                        ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                                        : "bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-300"
+                                    }`}
+                            >
+                                Architect / Admin
+                            </button>
+                        </div>
+
                         <div className="space-y-2">
                             <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-500">Full Name</label>
                             <input
@@ -64,8 +105,11 @@ export default function RegisterPage() {
                             />
                         </div>
 
-                        <button className="w-full bg-[var(--accent)] text-white py-4 font-bold hover:bg-opacity-90 transition-all uppercase tracking-widest text-xs md:text-sm">
-                            Register Now
+                        <button
+                            disabled={isLoading}
+                            className="w-full bg-[var(--accent)] text-white py-4 font-bold hover:bg-opacity-90 disabled:bg-gray-400 transition-all uppercase tracking-widest text-xs md:text-sm"
+                        >
+                            {isLoading ? "creating account..." : "Register Now"}
                         </button>
                     </form>
 
