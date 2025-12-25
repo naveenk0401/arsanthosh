@@ -35,10 +35,10 @@ class AuthService {
         if (userExists) throw new AppError("User already exists", 400);
 
         const otp = this.generateOTP();
-        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+        const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
 
-        // Users are auto-approved, admins and super-admins need approval
-        const isApproved = role === "user" || !role;
+        // Users are NOT auto-approved anymore. Must verify email first.
+        const isApproved = false;
 
         // Hash password before saving
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -49,7 +49,7 @@ class AuthService {
             password: hashedPassword,
             role: role || "user",
             isVerified: false,
-            isApproved,
+            isApproved, // false
             otp,
             otpExpires,
         });
@@ -124,7 +124,7 @@ class AuthService {
             // If not verified, trigger a new OTP
             const otp = this.generateOTP();
             user.otp = otp;
-            user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+            user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
             await user.save();
             await emailService.sendOTP(email, otp);
             throw new AppError("Account not verified. A new OTP has been sent to your email.", 403);
