@@ -1,39 +1,41 @@
 const authService = require("../services/authService");
+const ApiResponse = require("../utils/ApiResponse");
+const catchAsync = require("../utils/catchAsync");
 
-/**
- * Controller for Auth related endpoints.
- * Communicates with AuthService and handles HTTP responses.
- */
+
 class AuthController {
-    async register(req, res) {
-        try {
-            const result = await authService.register(req.body);
-            res.status(201).json(result);
-        } catch (error) {
-            res.status(400).json({ message: error.message });
-        }
-    }
+    register = catchAsync(async (req, res) => {
+        const result = await authService.register(req.body);
+        return ApiResponse.success(res, 201, result, "Registration successful");
+    });
 
-    async login(req, res) {
-        try {
-            const { email, password } = req.body;
-            const result = await authService.login(email, password);
-            res.status(200).json(result);
-        } catch (error) {
-            const status = error.message.includes("ACCOUNT_NOT_VERIFIED") ? 403 : 401;
-            res.status(status).json({ message: error.message });
-        }
-    }
+    login = catchAsync(async (req, res) => {
+        const { email, password } = req.body;
+        const result = await authService.login(email, password);
+        return ApiResponse.success(res, 200, result, "Login successful");
+    });
 
-    async verify(req, res) {
-        try {
-            const { email, otp } = req.body;
-            const result = await authService.verifyOTP(email, otp);
-            res.status(200).json(result);
-        } catch (error) {
-            res.status(400).json({ message: error.message });
-        }
-    }
+    verify = catchAsync(async (req, res) => {
+        const { email, otp } = req.body;
+        const result = await authService.verifyOTP(email, otp);
+        return ApiResponse.success(res, 200, result, "Verification successful");
+    });
+
+    getPendingAdmins = catchAsync(async (req, res) => {
+        const result = await authService.getPendingAdmins();
+        return ApiResponse.success(res, 200, result, "Pending admins fetched successfully");
+    });
+
+    approveAdmin = catchAsync(async (req, res) => {
+        const { adminId } = req.params;
+        const result = await authService.approveAdmin(adminId);
+        return ApiResponse.success(res, 200, result, "Admin approved successfully");
+    });
+
+    getUsers = catchAsync(async (req, res) => {
+        const result = await authService.getAllUsers();
+        return ApiResponse.success(res, 200, result, "Users fetched successfully");
+    });
 }
 
 module.exports = new AuthController();

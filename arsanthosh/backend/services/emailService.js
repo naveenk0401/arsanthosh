@@ -1,55 +1,83 @@
 const nodemailer = require("nodemailer");
+const { otpTemplate, orderConfirmationTemplate, welcomeTemplate } = require("../utils/emailTemplates");
 
 /**
  * Service to handle Email operations.
- * Optimized for scalability and future SMTP provider switches.
+ * Optimized for scalability and professional communication.
  */
 class EmailService {
-    constructor() {
-        // For development, we use ethereal or local SMTP logic
-        // In production, user will update .env with real SMTP details
-        this.transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || "smtp.ethereal.email",
-            port: process.env.SMTP_PORT || 587,
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS,
-            },
-        });
-    }
+  constructor() {
+    this.transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: process.env.SMTP_PORT || 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
 
-    /**
-     * Sends an OTP to the specified email.
-     * @param {string} email - Recipient email.
-     * @param {string} otp - Generated verification code.
-     */
-    async sendOTP(email, otp) {
-        const mailOptions = {
-            from: '"Architect Santhosh Support" <support@arsanthosh.com>',
-            to: email,
-            subject: "Verification Code - Architect Santhosh",
-            html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee;">
-            <h2 style="color: #c5a059; text-align: center;">Verify Your Account</h2>
-            <p>Thank you for choosing Architect Santhosh. Please use the following One-Time Password (OTP) to complete your registration:</p>
-            <div style="background: #f9f9f9; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #111;">
-              ${otp}
-            </div>
-            <p style="color: #666; font-size: 12px; margin-top: 30px;">
-              This code is valid for 10 minutes. If you did not request this, please ignore this email.
-            </p>
-          </div>
-        `,
-        };
+    this.from = process.env.EMAIL_FROM || '"Architect Santhosh" <noreply@arsanthosh.com>';
+  }
 
-        try {
-            await this.transporter.sendMail(mailOptions);
-            console.log(`OTP sent to ${email}`);
-        } catch (error) {
-            console.error("Error sending email:", error);
-            throw new Error("Failed to send verification email.");
-        }
+  /**
+   * Sends an OTP to the specified email.
+   */
+  async sendOTP(email, otp) {
+    const mailOptions = {
+      from: this.from,
+      to: email,
+      subject: `Verification Code: ${otp}`,
+      html: otpTemplate(otp),
+    };
+
+    return this._send(mailOptions, `OTP sent to ${email}`);
+  }
+
+  /**
+   * Sends a Welcome email to new customers.
+   */
+  async sendWelcomeEmail(email, userName) {
+    const mailOptions = {
+      from: this.from,
+      to: email,
+      subject: "Welcome to Architect Santhosh",
+      html: welcomeTemplate(userName),
+    };
+
+    return this._send(mailOptions, `Welcome email sent to ${email}`);
+  }
+
+  /**
+   * Sends an Order Confirmation email.
+   * @param {string} email - Recipient email.
+   * @param {Object} orderData - Data for the order template.
+   */
+  async sendOrderConfirmation(email, orderData) {
+    const mailOptions = {
+      from: this.from,
+      to: email,
+      subject: `Order Confirmed: #${orderData.orderId}`,
+      html: orderConfirmationTemplate(orderData),
+    };
+
+    return this._send(mailOptions, `Order confirmation sent to ${email}`);
+  }
+
+  /**
+   * Internal helper to send mail.
+   */
+  async _send(options, successLog) {
+    try {
+      const info = await this.transporter.sendMail(options);
+      console.log(successLog, info.messageId);
+      return info;
+    } catch (error) {
+      console.error("Email send error:", error);
+      // In a real app, we might retry or use a queue
+      throw new Error(`Email delivery failed: ${error.message}`);
     }
+  }
 }
 
 module.exports = new EmailService();

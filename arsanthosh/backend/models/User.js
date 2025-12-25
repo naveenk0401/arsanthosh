@@ -5,8 +5,9 @@ const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ["user", "admin"], default: "user" },
+    role: { type: String, enum: ["user", "admin", "super-admin"], default: "user" },
     isVerified: { type: Boolean, default: false },
+    isApproved: { type: Boolean, default: false }, // Default false, logic will handle auto-approve for 'user'
     otp: { type: String },
     otpExpires: { type: Date },
     createdAt: { type: Date, default: Date.now },
