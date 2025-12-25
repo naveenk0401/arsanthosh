@@ -7,10 +7,12 @@ const { otpTemplate, orderConfirmationTemplate, welcomeTemplate } = require("../
  */
 class EmailService {
   constructor() {
+    const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT.toString().replace(/['"]/g, '')) : 587;
+
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: process.env.SMTP_PORT || 587,
-      secure: false, // true for 465, false for other ports
+      port: port,
+      secure: port === 465, // true for 465, false for other ports
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
