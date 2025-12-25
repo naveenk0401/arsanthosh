@@ -1,91 +1,74 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 const { otpTemplate, orderConfirmationTemplate, welcomeTemplate } = require("../utils/emailTemplates");
 
 /**
- * Service to handle Email operations.
- * Optimized for scalability and professional communication.
+ * Service to handle Email operations using Resend API.
+ * Optimized for reliability and modern cloud environments.
  */
 class EmailService {
   constructor() {
-    // Defensive port parsing for cloud environments
-    let rawPort = process.env.SMTP_PORT ? process.env.SMTP_PORT.toString().replace(/[^0-9]/g, '') : "587";
-    let port = parseInt(rawPort, 10);
+    // If you don't have an API key yet, it will use the RESEND_API_KEY from .env
+    this.resend = new Resend(process.env.RESEND_API_KEY || "re_123456789");
 
-    if (isNaN(port) || port <= 0 || port > 65535) {
-      console.warn(`Invalid SMTP_PORT "${process.env.SMTP_PORT}" received. Defaulting to 587.`);
-      port = 587;
-    }
-
-    console.log(`SMTP Config: Host=${process.env.SMTP_HOST || "smtp.gmail.com"}, Port=${port}, User=${process.env.SMTP_USER}`);
-
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: port,
-      secure: port === 465, // true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-
-    this.from = process.env.EMAIL_FROM || '"Architect Santhosh" <noreply@arsanthosh.com>';
+    // Default verified sender - Resend requires a verified domain or "onboarding@resend.dev" for testing
+    this.from = process.env.EMAIL_FROM || "onboarding@resend.dev";
   }
 
   /**
    * Sends an OTP to the specified email.
    */
   async sendOTP(email, otp) {
-    const mailOptions = {
-      from: this.from,
+    return this._send({
       to: email,
       subject: `Verification Code: ${otp}`,
       html: otpTemplate(otp),
-    };
-
-    return this._send(mailOptions, `OTP sent to ${email}`);
+    }, `OTP sent to ${email}`);
   }
 
   /**
    * Sends a Welcome email to new customers.
    */
   async sendWelcomeEmail(email, userName) {
-    const mailOptions = {
-      from: this.from,
+    return this._send({
       to: email,
       subject: "Welcome to Architect Santhosh",
       html: welcomeTemplate(userName),
-    };
-
-    return this._send(mailOptions, `Welcome email sent to ${email}`);
+    }, `Welcome email sent to ${email}`);
   }
 
   /**
    * Sends an Order Confirmation email.
-   * @param {string} email - Recipient email.
-   * @param {Object} orderData - Data for the order template.
    */
   async sendOrderConfirmation(email, orderData) {
-    const mailOptions = {
-      from: this.from,
+    return this._send({
       to: email,
       subject: `Order Confirmed: #${orderData.orderId}`,
       html: orderConfirmationTemplate(orderData),
-    };
-
-    return this._send(mailOptions, `Order confirmation sent to ${email}`);
+    }, `Order confirmation sent to ${email}`);
   }
 
   /**
-   * Internal helper to send mail.
+   * Internal helper to send mail via Resend API.
    */
   async _send(options, successLog) {
     try {
-      const info = await this.transporter.sendMail(options);
-      console.log(successLog, info.messageId);
-      return info;
+      const { data, error } = await this.resend.emails.send({
+        from: this.from,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      console.log(successLog, data.id);
+      return data;
     } catch (error) {
       console.error("Email send error:", error);
-      // In a real app, we might retry or use a queue
+      // Fallback/Log the error but don't strictly crash the auth flow if email fails during testing
+      // Remove the throw below if you want registration to succeed even if email fails
       throw new Error(`Email delivery failed: ${error.message}`);
     }
   }
