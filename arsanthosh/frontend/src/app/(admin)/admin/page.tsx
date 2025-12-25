@@ -7,13 +7,15 @@ import Link from "next/link";
 import { api } from "@/utils/api";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import ProjectsTab from "@/components/admin/ProjectsTab";
+import InquiriesTab from "@/components/admin/InquiriesTab";
 
 export default function AdminDashboard() {
     const { user, token, logout, isLoading: authLoading } = useAuth();
     const router = useRouter();
     const [users, setUsers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<"overview" | "users">("overview");
+    const [activeTab, setActiveTab] = useState<"overview" | "users" | "projects" | "inquiries">("overview");
 
     useEffect(() => {
         if (!authLoading && (!user || (user.role !== "admin" && user.role !== "super-admin"))) {
@@ -70,21 +72,31 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-gray-200 mb-8 gap-8">
+                <div className="flex border-b border-gray-200 mb-8 gap-8 overflow-x-auto">
                     <button
                         onClick={() => setActiveTab("overview")}
-                        className={`pb-4 text-xs font-bold uppercase tracking-widest transition-all ${activeTab === "overview" ? "border-b-2 border-[var(--primary)] text-[var(--primary)]" : "text-gray-400 hover:text-gray-600"}`}
+                        className={`pb-4 text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === "overview" ? "border-b-2 border-[var(--primary)] text-[var(--primary)]" : "text-gray-400 hover:text-gray-600"}`}
                     >
                         Overview
                     </button>
                     <button
+                        onClick={() => setActiveTab("projects")}
+                        className={`pb-4 text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === "projects" ? "border-b-2 border-[var(--primary)] text-[var(--primary)]" : "text-gray-400 hover:text-gray-600"}`}
+                    >
+                        Projects
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("inquiries")}
+                        className={`pb-4 text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === "inquiries" ? "border-b-2 border-[var(--primary)] text-[var(--primary)]" : "text-gray-400 hover:text-gray-600"}`}
+                    >
+                        Inquiries
+                    </button>
+                    <button
                         onClick={() => setActiveTab("users")}
-                        className={`pb-4 text-xs font-bold uppercase tracking-widest transition-all ${activeTab === "users" ? "border-b-2 border-[var(--primary)] text-[var(--primary)]" : "text-gray-400 hover:text-gray-600"}`}
+                        className={`pb-4 text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === "users" ? "border-b-2 border-[var(--primary)] text-[var(--primary)]" : "text-gray-400 hover:text-gray-600"}`}
                     >
                         User Management
                     </button>
-                    <button className="pb-4 text-xs font-bold uppercase tracking-widest text-gray-300 cursor-not-allowed">Orders</button>
-                    <button className="pb-4 text-xs font-bold uppercase tracking-widest text-gray-300 cursor-not-allowed">Inventory</button>
                 </div>
 
                 {activeTab === "overview" && (
@@ -115,18 +127,21 @@ export default function AdminDashboard() {
                                 <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300">
                                     <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                                 </div>
-                                <h3 className="text-xl font-bold mb-2 font-display">Source Architecture Sync</h3>
+                                <h3 className="text-xl font-bold mb-2 font-display">Studio Management Console</h3>
                                 <p className="text-gray-500 max-w-md mx-auto text-sm leading-relaxed mb-8">
-                                    The studio management modules are now connected. You can manage users and monitor system stability. Orders and inventory modules are undergoing final validation.
+                                    Select a tab above to manage your projects, inquiries, or user accounts.
                                 </p>
                                 <div className="flex justify-center gap-6">
-                                    <button onClick={() => setActiveTab("users")} className="text-xs font-bold uppercase tracking-widest text-[var(--accent)] hover:underline">Manage Users</button>
-                                    <Link href="/store" className="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors">View Storefront</Link>
+                                    <button onClick={() => setActiveTab("projects")} className="text-xs font-bold uppercase tracking-widest text-[var(--accent)] hover:underline">Manage Projects</button>
+                                    <button onClick={() => setActiveTab("inquiries")} className="text-xs font-bold uppercase tracking-widest text-[var(--accent)] hover:underline">View Inquiries</button>
                                 </div>
                             </div>
                         </div>
                     </>
                 )}
+
+                {activeTab === "projects" && <ProjectsTab />}
+                {activeTab === "inquiries" && <InquiriesTab />}
 
                 {activeTab === "users" && (
                     <div className="bg-white border border-gray-100 shadow-sm overflow-hidden">
@@ -158,7 +173,7 @@ export default function AdminDashboard() {
                                                 </td>
                                                 <td className="px-8 py-4">
                                                     <span className={`px-2 py-1 text-[9px] font-bold uppercase tracking-widest rounded-sm ${u.role === "super-admin" ? "bg-purple-100 text-purple-700" :
-                                                            u.role === "admin" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"
+                                                        u.role === "admin" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"
                                                         }`}>
                                                         {u.role}
                                                     </span>
