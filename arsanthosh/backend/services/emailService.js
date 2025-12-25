@@ -7,8 +7,16 @@ const { otpTemplate, orderConfirmationTemplate, welcomeTemplate } = require("../
  */
 class EmailService {
   constructor() {
-    let port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT.toString().replace(/[^0-9]/g, '')) : 587;
-    if (isNaN(port)) port = 587;
+    // Defensive port parsing for cloud environments
+    let rawPort = process.env.SMTP_PORT ? process.env.SMTP_PORT.toString().replace(/[^0-9]/g, '') : "587";
+    let port = parseInt(rawPort, 10);
+
+    if (isNaN(port) || port <= 0 || port > 65535) {
+      console.warn(`Invalid SMTP_PORT "${process.env.SMTP_PORT}" received. Defaulting to 587.`);
+      port = 587;
+    }
+
+    console.log(`SMTP Config: Host=${process.env.SMTP_HOST || "smtp.gmail.com"}, Port=${port}, User=${process.env.SMTP_USER}`);
 
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.gmail.com",
