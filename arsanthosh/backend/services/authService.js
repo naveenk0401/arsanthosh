@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const PendingUser = require("../models/PendingUser");
 const emailService = require("./emailService");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
@@ -31,28 +32,20 @@ class AuthService {
     async register(userData) {
         const { name, email, password, role } = userData;
 
+        // Check if verified user exists in main collection
         const userExists = await User.findOne({ email });
         if (userExists) throw new AppError("User already exists", 400);
 
         const otp = this.generateOTP();
         const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
-
-        // Users are NOT auto-approved anymore. Must verify email first.
-        const isApproved = false;
-
-        // Hash password before saving
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const user = await User.create({
-            name,
-            email,
-            password: hashedPassword,
-            role: role || "user",
-            isVerified: false,
-            isApproved, // false
-            otp,
-            otpExpires,
-        });
+        // Update or create pending registration
+        await PendingUser.findOneAndUpdate(
+            { email },
+            { name, password: hashedPassword, role: role || "user", otp, otpExpires, createdAt: new Date() },
+            { upsert: true, new: true }
+        );
 
         // Send email asynchronously
         await emailService.sendOTP(email, otp);
@@ -63,7 +56,7 @@ class AuthService {
 
         return {
             message: responseMessage,
-            userId: user._id,
+            email,
         };
     }
 
@@ -71,23 +64,34 @@ class AuthService {
      * Verifies the OTP.
      */
     async verifyOTP(email, otp) {
-        const user = await User.findOne({ email, otp, otpExpires: { $gt: Date.now() } });
-        if (!user) throw new AppError("Invalid or expired OTP", 400);
+        // Look for the record in PendingUser
+        const pendingUser = await PendingUser.findOne({
+            email,
+            otp,
+            otpExpires: { $gt: Date.now() }
+        });
 
-        user.isVerified = true;
-        user.otp = undefined;
-        user.otpExpires = undefined;
+        if (!pendingUser) throw new AppError("Invalid or expired OTP", 400);
 
-        // Finalize approval for users
+        // Create the actual user in the main collection
+        const user = await User.create({
+            name: pendingUser.name,
+            email: pendingUser.email,
+            password: pendingUser.password,
+            role: pendingUser.role,
+            isVerified: true,
+            isApproved: pendingUser.role === "user", // Auto-approve users, not admins
+        });
+
+        // Delete the pending record
+        await PendingUser.deleteOne({ _id: pendingUser._id });
+
+        // Send welcome email if it's a regular user
         if (user.role === "user") {
-            user.isApproved = true;
-            // Send welcome email asynchronously
             emailService.sendWelcomeEmail(user.email, user.name).catch(console.error);
         }
 
-        await user.save();
-
-        if (!user.isApproved) {
+        if (user.role === "admin") {
             return {
                 message: "Email verified successfully. Your admin account is now pending super-admin approval.",
                 isApproved: false,
