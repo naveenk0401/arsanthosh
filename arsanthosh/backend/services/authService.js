@@ -1,5 +1,4 @@
 const User = require("../models/User");
-const PendingUser = require("../models/PendingUser");
 const emailService = require("./emailService");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
@@ -7,7 +6,6 @@ const AppError = require("../utils/AppError");
 
 /**
  * Service to handle Authentication Business Logic.
- * Decoupled from Express response objects for testability and scaling.
  */
 class AuthService {
     /**
@@ -32,30 +30,45 @@ class AuthService {
     async register(userData) {
         const { name, email, password, role } = userData;
 
-        // Check if verified user exists in main collection
+        // Check if verified user exists
         const userExists = await User.findOne({ email });
-        if (userExists) throw new AppError("User already exists", 400);
+
+        if (userExists && userExists.isVerified) {
+            throw new AppError("User already exists", 400);
+        }
 
         const otp = this.generateOTP();
         const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Update or create pending registration
-        await PendingUser.findOneAndUpdate(
-            { email },
-            { name, password: hashedPassword, role: role || "user", otp, otpExpires, createdAt: new Date() },
-            { upsert: true, new: true }
-        );
+        let user;
+        if (userExists && !userExists.isVerified) {
+            // Update existing unverified user
+            userExists.name = name;
+            userExists.password = hashedPassword;
+            userExists.role = role || "user";
+            userExists.otp = otp;
+            userExists.otpExpires = otpExpires;
+            user = await userExists.save();
+        } else {
+            // Create new unverified user
+            user = await User.create({
+                name,
+                email,
+                password: hashedPassword,
+                role: role || "user",
+                isVerified: false,
+                isApproved: false,
+                otp,
+                otpExpires,
+            });
+        }
 
-        // Send email asynchronously
+        // Send email
         await emailService.sendOTP(email, otp);
 
-        const responseMessage = role === "admin"
-            ? "OTP sent. Please verify. Note: Admin accounts require super-admin approval after verification."
-            : "OTP sent to email. Please verify to complete registration.";
-
         return {
-            message: responseMessage,
+            message: "OTP sent to email. Please verify to complete registration.",
             email,
         };
     }
@@ -64,32 +77,25 @@ class AuthService {
      * Verifies the OTP.
      */
     async verifyOTP(email, otp) {
-        // Look for the record in PendingUser
-        const pendingUser = await PendingUser.findOne({
+        const user = await User.findOne({
             email,
             otp,
             otpExpires: { $gt: Date.now() }
         });
 
-        if (!pendingUser) throw new AppError("Invalid or expired OTP", 400);
+        if (!user) throw new AppError("Invalid or expired OTP", 400);
 
-        // Create the actual user in the main collection
-        const user = await User.create({
-            name: pendingUser.name,
-            email: pendingUser.email,
-            password: pendingUser.password,
-            role: pendingUser.role,
-            isVerified: true,
-            isApproved: pendingUser.role === "user", // Auto-approve users, not admins
-        });
+        user.isVerified = true;
+        user.otp = undefined;
+        user.otpExpires = undefined;
 
-        // Delete the pending record
-        await PendingUser.deleteOne({ _id: pendingUser._id });
-
-        // Send welcome email if it's a regular user
+        // Auto-approve regular users
         if (user.role === "user") {
+            user.isApproved = true;
             emailService.sendWelcomeEmail(user.email, user.name).catch(console.error);
         }
+
+        await user.save();
 
         if (user.role === "admin") {
             return {
@@ -125,17 +131,16 @@ class AuthService {
         }
 
         if (!user.isVerified) {
-            // If not verified, trigger a new OTP
             const otp = this.generateOTP();
             user.otp = otp;
-            user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+            user.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
             await user.save();
             await emailService.sendOTP(email, otp);
-            throw new AppError("Account not verified. A new OTP has been sent to your email.", 403);
+            throw new AppError("Account not verified. A new OTP has been sent.", 403);
         }
 
         if (!user.isApproved) {
-            throw new AppError("Your account is pending super-admin approval.", 403);
+            throw new AppError("Your account is pending approval.", 403);
         }
 
         return {
@@ -148,32 +153,19 @@ class AuthService {
             token: this.generateToken(user._id),
         };
     }
-    /**
-     * Approves a pending admin account.
-     */
+
     async approveAdmin(adminId) {
         const admin = await User.findById(adminId);
         if (!admin) throw new AppError("Admin not found", 404);
-        if (admin.role !== "admin") throw new AppError("User is not an admin", 400);
-
         admin.isApproved = true;
         await admin.save();
-
-        return {
-            message: `Admin ${admin.name} approved successfully.`,
-        };
+        return { message: "Admin approved" };
     }
 
-    /**
-     * Lists all pending admin accounts.
-     */
     async getPendingAdmins() {
         return await User.find({ role: "admin", isApproved: false, isVerified: true });
     }
 
-    /**
-     * Lists all registered users (for admin dashboard).
-     */
     async getAllUsers() {
         return await User.find({ role: "user" }).select("-password -otp -otpExpires");
     }
