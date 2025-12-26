@@ -18,14 +18,19 @@ export default function RegisterPage() {
         setIsLoading(true);
         setError("");
 
-        const response = await api.post("/auth/register", formData);
+        try {
+            const response = await api.post("/auth/register", formData);
 
-        setIsLoading(false);
+            setIsLoading(false);
 
-        if (response.success) {
-            router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`);
-        } else {
-            setError(response.error?.message || "Registration failed");
+            if (response.success) {
+                router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`);
+            } else {
+                setError(response.error?.message || "Registration failed");
+            }
+        } catch (err: any) {
+            setIsLoading(false);
+            setError("Network error. Please try again.");
         }
     };
 
@@ -51,8 +56,8 @@ export default function RegisterPage() {
                                 type="button"
                                 onClick={() => setFormData({ ...formData, role: "user" })}
                                 className={`flex-1 py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest border transition-all ${formData.role === "user"
-                                        ? "bg-[var(--primary)] text-white border-[var(--primary)]"
-                                        : "bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-300"
+                                    ? "bg-[var(--primary)] text-white border-[var(--primary)]"
+                                    : "bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-300"
                                     }`}
                             >
                                 Customer
@@ -61,8 +66,8 @@ export default function RegisterPage() {
                                 type="button"
                                 onClick={() => setFormData({ ...formData, role: "admin" })}
                                 className={`flex-1 py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest border transition-all ${formData.role === "admin"
-                                        ? "bg-[var(--accent)] text-white border-[var(--accent)]"
-                                        : "bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-300"
+                                    ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                                    : "bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-300"
                                     }`}
                             >
                                 Architect / Admin
