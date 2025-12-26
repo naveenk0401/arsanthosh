@@ -1,55 +1,77 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
+const { otpTemplate, orderConfirmationTemplate, welcomeTemplate } = require("../utils/emailTemplates");
 
 /**
- * Service to handle Email operations.
- * Optimized for scalability and future SMTP provider switches.
+ * Service to handle Email operations using Resend API.
+ * Optimized for reliability and modern cloud environments.
  */
 class EmailService {
-    constructor() {
-        // For development, we use ethereal or local SMTP logic
-        // In production, user will update .env with real SMTP details
-        this.transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || "smtp.ethereal.email",
-            port: process.env.SMTP_PORT || 587,
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS,
-            },
-        });
-    }
+  constructor() {
+    // If you don't have an API key yet, it will use the RESEND_API_KEY from .env
+    this.resend = new Resend(process.env.RESEND_API_KEY || "re_123456789");
 
-    /**
-     * Sends an OTP to the specified email.
-     * @param {string} email - Recipient email.
-     * @param {string} otp - Generated verification code.
-     */
-    async sendOTP(email, otp) {
-        const mailOptions = {
-            from: '"Architect Santhosh Support" <support@arsanthosh.com>',
-            to: email,
-            subject: "Verification Code - Architect Santhosh",
-            html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee;">
-            <h2 style="color: #c5a059; text-align: center;">Verify Your Account</h2>
-            <p>Thank you for choosing Architect Santhosh. Please use the following One-Time Password (OTP) to complete your registration:</p>
-            <div style="background: #f9f9f9; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #111;">
-              ${otp}
-            </div>
-            <p style="color: #666; font-size: 12px; margin-top: 30px;">
-              This code is valid for 10 minutes. If you did not request this, please ignore this email.
-            </p>
-          </div>
-        `,
-        };
+    // Default verified sender - Resend requires a verified domain or "onboarding@resend.dev" for testing
+    this.from = process.env.EMAIL_FROM || "onboarding@resend.dev";
+  }
 
-        try {
-            await this.transporter.sendMail(mailOptions);
-            console.log(`OTP sent to ${email}`);
-        } catch (error) {
-            console.error("Error sending email:", error);
-            throw new Error("Failed to send verification email.");
-        }
+  /**
+   * Sends an OTP to the specified email.
+   */
+  async sendOTP(email, otp) {
+    return this._send({
+      to: email,
+      subject: `Verification Code: ${otp}`,
+      html: otpTemplate(otp),
+    }, `OTP sent to ${email}`);
+  }
+
+  /**
+   * Sends a Welcome email to new customers.
+   */
+  async sendWelcomeEmail(email, userName) {
+    return this._send({
+      to: email,
+      subject: "Welcome to Architect Santhosh",
+      html: welcomeTemplate(userName),
+    }, `Welcome email sent to ${email}`);
+  }
+
+  /**
+   * Sends an Order Confirmation email.
+   */
+  async sendOrderConfirmation(email, orderData) {
+    return this._send({
+      to: email,
+      subject: `Order Confirmed: #${orderData.orderId}`,
+      html: orderConfirmationTemplate(orderData),
+    }, `Order confirmation sent to ${email}`);
+  }
+
+  /**
+   * Internal helper to send mail via Resend API.
+   */
+  async _send(options, successLog) {
+    try {
+      const { data, error } = await this.resend.emails.send({
+        from: this.from,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      console.log(successLog, data.id);
+      return data;
+    } catch (error) {
+      console.error("Email send error:", error);
+      // Fallback/Log the error but don't strictly crash the auth flow if email fails during testing
+      // Remove the throw below if you want registration to succeed even if email fails
+      throw new Error(`Email delivery failed: ${error.message}`);
     }
+  }
 }
 
 module.exports = new EmailService();

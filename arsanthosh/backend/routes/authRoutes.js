@@ -1,18 +1,28 @@
 const express = require("express");
 const authController = require("../controllers/authController");
+const validate = require("../middleware/validate");
+const { registerSchema, loginSchema, verifyOTPSchema } = require("../validators/authValidator");
 const router = express.Router();
+
+const { protect, restrictTo } = require("../middleware/authMiddleware");
 
 /**
  * Public Authentication Routes
  */
-router.post("/register", (req, res) => authController.register(req, res));
-router.post("/login", (req, res) => authController.login(req, res));
-router.post("/verify-otp", (req, res) => authController.verify(req, res));
+router.post("/register", validate(registerSchema), authController.register);
+router.post("/login", validate(loginSchema), authController.login);
+router.post("/verify-otp", validate(verifyOTPSchema), authController.verify);
+
+/**
+ * Admin Management Routes (Super Admin only)
+ */
+router.get("/pending-admins", protect, restrictTo("super-admin"), authController.getPendingAdmins);
+router.patch("/approve-admin/:adminId", protect, restrictTo("super-admin"), authController.approveAdmin);
+router.get("/users", protect, restrictTo("admin", "super-admin"), authController.getUsers);
 
 /**
  * Obscure Admin Routes (Backend)
- * These can be further protected by custom headers known only to the frontend.
  */
-router.post("/access-auth-v1", (req, res) => authController.login(req, res)); // Obscure admin login endpoint
+router.post("/access-auth-v1", validate(loginSchema), authController.login);
 
 module.exports = router;

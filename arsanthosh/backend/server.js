@@ -1,10 +1,10 @@
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const dotenv = require("dotenv");
 const authRoutes = require("./routes/authRoutes");
-
-dotenv.config();
+const errorMiddleware = require("./middleware/errorMiddleware");
+const AppError = require("./utils/AppError");
 
 const app = express();
 app.use(express.json());
@@ -12,6 +12,16 @@ app.use(cors());
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/projects", require("./routes/projectRoutes"));
+app.use("/api/inquiries", require("./routes/inquiryRoutes"));
+
+// Catch-all route for undefined paths
+app.all("*", (req, res, next) => {
+    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
+// Global Error Handling Middleware
+app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/arsanthosh";
@@ -20,9 +30,10 @@ mongoose
     .connect(MONGO_URI)
     .then(() => {
         console.log("Connected to MongoDB");
-        if (process.env.NODE_ENV !== 'production') {
-            app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-        }
+        // Listen on all network interfaces (required for Render/Cloud)
+        app.listen(PORT, "0.0.0.0", () => {
+            console.log(`Server running on port ${PORT}`);
+        });
     })
     .catch((err) => console.log(err));
 
