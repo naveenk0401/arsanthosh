@@ -9,13 +9,20 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import ProjectsTab from "@/components/admin/ProjectsTab";
 import InquiriesTab from "@/components/admin/InquiriesTab";
+import ProductsTab from "@/components/admin/ProductsTab";
 
 export default function AdminDashboard() {
     const { user, token, logout, isLoading: authLoading } = useAuth();
     const router = useRouter();
     const [users, setUsers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<"overview" | "users" | "projects" | "inquiries">("overview");
+    const [activeTab, setActiveTab] = useState<"overview" | "users" | "projects" | "inquiries" | "products">("overview");
+    const [stats, setStats] = useState({
+        projects: 0,
+        products: 0,
+        inquiries: 0,
+        users: 0
+    });
 
     useEffect(() => {
         if (!authLoading && (!user || (user.role !== "admin" && user.role !== "super-admin"))) {
@@ -37,6 +44,27 @@ export default function AdminDashboard() {
         }
         setIsLoading(false);
     };
+
+    const fetchStats = async () => {
+        // Very basic stat fetching
+        const [projRes, prodRes, inqRes, userRes] = await Promise.all([
+            api.get("/projects"),
+            api.get("/products?status=all"),
+            api.get("/inquiries"),
+            api.get("/auth/users")
+        ]);
+
+        setStats({
+            projects: projRes.success ? (projRes.data as any[]).length : 0,
+            products: prodRes.success ? (prodRes.data as any[]).length : 0,
+            inquiries: inqRes.success ? (inqRes.data as any[]).length : 0,
+            users: userRes.success ? (userRes.data as any[]).length : 0
+        });
+    };
+
+    useEffect(() => {
+        if (token) fetchStats();
+    }, [token]);
 
     const handleApproveAdmin = async (userId: string) => {
         const response = await api.patch(`/auth/approve-admin/${userId}`, {});
@@ -92,6 +120,12 @@ export default function AdminDashboard() {
                         Inquiries
                     </button>
                     <button
+                        onClick={() => setActiveTab("products")}
+                        className={`pb-4 text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === "products" ? "border-b-2 border-[var(--primary)] text-[var(--primary)]" : "text-gray-400 hover:text-gray-600"}`}
+                    >
+                        Products
+                    </button>
+                    <button
                         onClick={() => setActiveTab("users")}
                         className={`pb-4 text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === "users" ? "border-b-2 border-[var(--primary)] text-[var(--primary)]" : "text-gray-400 hover:text-gray-600"}`}
                     >
@@ -103,15 +137,15 @@ export default function AdminDashboard() {
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                             {[
-                                { label: "Total Orders", value: "124", color: "bg-blue-500" },
-                                { label: "Products", value: "48", color: "bg-green-500" },
-                                { label: "Services", value: "6", color: "bg-purple-500" },
-                                { label: "Active Users", value: users.length || "...", color: "bg-orange-500" }
+                                { label: "Total Inquiries", value: stats.inquiries, color: "bg-blue-500", onClick: () => setActiveTab("inquiries") },
+                                { label: "Store Products", value: stats.products, color: "bg-green-500", onClick: () => setActiveTab("products") },
+                                { label: "Portfolio Projects", value: stats.projects, color: "bg-purple-500", onClick: () => setActiveTab("projects") },
+                                { label: "Active Users", value: stats.users || "...", color: "bg-orange-500", onClick: () => setActiveTab("users") }
                             ].map((stat, i) => (
-                                <div key={i} className="bg-white p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">{stat.label}</p>
+                                <button key={i} onClick={stat.onClick} className="bg-white p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all text-left group">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1 group-hover:text-[var(--primary)] transition-colors">{stat.label}</p>
                                     <p className="text-3xl font-bold font-display">{stat.value}</p>
-                                </div>
+                                </button>
                             ))}
                         </div>
 
@@ -142,6 +176,7 @@ export default function AdminDashboard() {
 
                 {activeTab === "projects" && <ProjectsTab />}
                 {activeTab === "inquiries" && <InquiriesTab />}
+                {activeTab === "products" && <ProductsTab />}
 
                 {activeTab === "users" && (
                     <div className="bg-white border border-gray-100 shadow-sm overflow-hidden">

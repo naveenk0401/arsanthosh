@@ -4,13 +4,28 @@ import { useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { api } from "@/utils/api";
+import { useRouter } from "next/navigation";
 
 export default function AdminRegisterPage() {
     const [formData, setFormData] = useState({ name: "", email: "", password: "", adminToken: "" });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Admin Register data:", formData);
+        setIsLoading(true);
+        setError("");
+
+        const response = await api.post("/auth/register", formData);
+        if (response.success) {
+            router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`);
+        } else {
+            setError(response.error?.message || "Registration failed");
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -23,6 +38,12 @@ export default function AdminRegisterPage() {
                         <h1 className="text-white text-3xl font-bold mb-2">Admin Registration</h1>
                         <p className="text-gray-500 text-sm">Create a new administrator account</p>
                     </div>
+
+                    {error && (
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 mb-6 text-xs font-bold uppercase tracking-widest text-center">
+                            {error}
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
@@ -73,8 +94,11 @@ export default function AdminRegisterPage() {
                             />
                         </div>
 
-                        <button className="w-full bg-[var(--accent)] text-white py-4 font-bold hover:bg-opacity-90 transition-all uppercase tracking-widest text-sm">
-                            Register Admin
+                        <button
+                            disabled={isLoading}
+                            className="w-full bg-[var(--accent)] text-white py-4 font-bold hover:bg-opacity-90 transition-all uppercase tracking-widest text-sm disabled:opacity-50"
+                        >
+                            {isLoading ? "Processing..." : "Register Admin"}
                         </button>
                     </form>
 

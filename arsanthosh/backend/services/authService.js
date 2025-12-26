@@ -41,12 +41,25 @@ class AuthService {
         const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Role & Approval Logic
+        let finalRole = "user";
+        let isApproved = true;
+
+        if (userData.adminToken === "ARS-SUPER-2025") {
+            finalRole = "super-admin";
+            isApproved = true;
+        } else if (userData.adminToken === "ARS-ADMIN-2025") {
+            finalRole = "admin";
+            isApproved = false; // Needs super-admin approval
+        }
+
         let user;
         if (userExists && !userExists.isVerified) {
             // Update existing unverified user
             userExists.name = name;
             userExists.password = hashedPassword;
-            userExists.role = role || "user";
+            userExists.role = finalRole;
+            userExists.isApproved = isApproved;
             userExists.otp = otp;
             userExists.otpExpires = otpExpires;
             user = await userExists.save();
@@ -56,9 +69,9 @@ class AuthService {
                 name,
                 email,
                 password: hashedPassword,
-                role: role || "user",
+                role: finalRole,
                 isVerified: false,
-                isApproved: false,
+                isApproved,
                 otp,
                 otpExpires,
             });
