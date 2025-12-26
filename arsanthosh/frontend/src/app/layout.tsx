@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
 import CartNotification from "@/components/common/CartNotification";
+import CartSidebar from "@/components/layout/CartSidebar";
 
 export const metadata: Metadata = {
   title: "Interior Design & Hardware Store",
@@ -22,6 +23,7 @@ export default function RootLayout({
         <AuthProvider>
           <CartProvider>
             <CartNotification />
+            <CartSidebar />
             {children}
           </CartProvider>
         </AuthProvider>

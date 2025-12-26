@@ -30,56 +30,60 @@ export default function InquiriesTab() {
     };
 
     return (
-        <div className="bg-white border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-8 py-6 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
-                <h2 className="font-bold text-lg font-display">Inquiries</h2>
-                <button onClick={fetchInquiries} className="text-xs font-bold text-[var(--primary)] uppercase tracking-widest hover:underline">Refresh</button>
+        <div className="bg-white border border-gray-100 shadow-sm animate-in fade-in duration-500">
+            <div className="px-5 sm:px-8 py-6 border-b border-gray-50 bg-gray-50/30 flex justify-between items-center gap-4">
+                <h2 className="font-bold text-lg font-display uppercase italic tracking-tight text-gray-900 leading-tight">Consultation Inquiries</h2>
+                <button onClick={fetchInquiries} className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-widest hover:underline shrink-0">Refresh Feed</button>
             </div>
+
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead>
-                        <tr className="bg-gray-50 border-b border-gray-100">
-                            <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-500 tracking-wider">Date</th>
-                            <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-500 tracking-wider">Client</th>
-                            <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-500 tracking-wider">Service</th>
-                            <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-500 tracking-wider">Message</th>
-                            <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-500 tracking-wider">Status</th>
+                        <tr className="bg-gray-50/50 border-b border-gray-50">
+                            <th className="px-8 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Received On</th>
+                            <th className="px-8 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Prospect Details</th>
+                            <th className="px-8 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Requested Service</th>
+                            <th className="px-8 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Operational Status</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                         {isLoading ? (
-                            <tr><td colSpan={5} className="p-12 text-center text-gray-400 text-sm">Loading inquiries...</td></tr>
+                            <tr><td colSpan={4} className="p-20 text-center text-gray-600 text-[10px] font-bold uppercase tracking-widest animate-pulse">Syncing Inquiries...</td></tr>
                         ) : inquiries.length === 0 ? (
-                            <tr><td colSpan={5} className="p-12 text-center text-gray-400 text-sm">No inquiries found.</td></tr>
+                            <tr><td colSpan={4} className="p-20 text-center text-gray-600 text-[10px] font-bold uppercase tracking-widest">Inquiry Pipeline Empty.</td></tr>
                         ) : (
                             inquiries.map((inq) => (
-                                <tr key={inq._id} className="hover:bg-gray-50/50 transition-colors">
-                                    <td className="px-6 py-4 text-xs text-gray-500 whitespace-nowrap">
-                                        {new Date(inq.createdAt).toLocaleDateString()}
+                                <tr key={inq._id} className="hover:bg-gray-50/30 transition-colors group">
+                                    <td className="px-8 py-6 whitespace-nowrap">
+                                        <p className="text-[10px] font-bold text-gray-700 uppercase tracking-widest">{new Date(inq.createdAt).toLocaleDateString()}</p>
+                                        <p className="text-[9px] text-gray-600 font-bold uppercase tracking-tighter mt-1">{new Date(inq.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <p className="font-bold text-sm text-gray-900">{inq.name}</p>
-                                        <p className="text-xs text-gray-400">{inq.email}</p>
-                                        {inq.phone && <p className="text-xs text-gray-400">{inq.phone}</p>}
+                                    <td className="px-8 py-6">
+                                        <p className="font-bold text-sm text-gray-900 tracking-tight">{inq.name}</p>
+                                        <div className="flex gap-4 mt-1.5">
+                                            <p className="text-[10px] text-[var(--primary)] font-black">{inq.email}</p>
+                                            {inq.phone && <p className="text-[10px] text-gray-500 font-bold">{inq.phone}</p>}
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-xs font-medium text-gray-700">
-                                        {inq.serviceType}
+                                    <td className="px-8 py-6">
+                                        <span className="px-3 py-1 bg-gray-50 border border-gray-100 text-[9px] font-black uppercase tracking-widest text-gray-700 rounded-sm">
+                                            {inq.serviceType}
+                                        </span>
+                                        <p className="mt-2 text-[11px] text-gray-600 max-w-xs line-clamp-1 italic font-bold" title={inq.message}>"{inq.message}"</p>
                                     </td>
-                                    <td className="px-6 py-4 text-xs text-gray-600 max-w-xs truncate" title={inq.message}>
-                                        {inq.message}
-                                    </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-8 py-6">
                                         <select
                                             value={inq.status}
                                             onChange={(e) => handleStatusUpdate(inq._id, e.target.value)}
-                                            className={`text-[9px] font-bold uppercase tracking-widest px-2 py-1 border-none rounded-sm cursor-pointer outline-none focus:ring-1 focus:ring-offset-1 focus:ring-black/10 ${inq.status === 'New' ? 'bg-blue-100 text-blue-700' :
-                                                    inq.status === 'Contacted' ? 'bg-yellow-100 text-yellow-700' :
-                                                        inq.status === 'Closed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                            className={`text-[9px] font-black uppercase tracking-[0.2em] px-3 py-2 border rounded-sm cursor-pointer outline-none transition-all shadow-sm ${inq.status === 'New' ? 'bg-blue-50 border-blue-100 text-blue-600' :
+                                                inq.status === 'Contacted' ? 'bg-yellow-50 border-yellow-100 text-yellow-600' :
+                                                    inq.status === 'Closed' ? 'bg-green-50 border-green-100 text-green-600' :
+                                                        'bg-gray-50 border-gray-100 text-gray-600'
                                                 }`}
                                         >
-                                            <option value="New">New</option>
-                                            <option value="Contacted">Contacted</option>
-                                            <option value="Closed">Closed</option>
+                                            <option value="New">Pipeline: New</option>
+                                            <option value="Contacted">Active: Contacted</option>
+                                            <option value="Closed">Archived: Closed</option>
                                         </select>
                                     </td>
                                 </tr>

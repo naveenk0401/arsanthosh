@@ -20,9 +20,13 @@ router.get("/pending-admins", protect, restrictTo("super-admin"), authController
 router.patch("/approve-admin/:adminId", protect, restrictTo("super-admin"), authController.approveAdmin);
 router.get("/users", protect, restrictTo("admin", "super-admin"), authController.getUsers);
 
+// Super Admin Secondary Auth Override
+router.post("/forgot-secret", authController.requestSecretReset);
+router.post("/reset-secret", authController.verifySecretReset);
+
 /**
  * Obscure Admin Routes (Backend)
  */
-router.post("/access-auth-v1", validate(loginSchema), authController.login);
+router.post("/access-auth-v1", authController.login);
 
 module.exports = router;

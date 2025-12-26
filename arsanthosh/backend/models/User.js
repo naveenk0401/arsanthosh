@@ -9,6 +9,9 @@ const userSchema = new mongoose.Schema({
     isApproved: { type: Boolean, default: false },
     otp: { type: String },
     otpExpires: { type: Date },
+    secretKey: { type: String }, // For super-admin second layer
+    secretResetOtp: { type: String },
+    secretResetExpires: { type: Date },
     createdAt: { type: Date, default: Date.now },
 }, { collection: "ars_users" });
 

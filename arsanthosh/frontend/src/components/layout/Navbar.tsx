@@ -13,7 +13,6 @@ export default function Navbar() {
   const { user, logout } = useAuth();
 
   const isStorePage = pathname?.startsWith("/store");
-  const isAdmin = user?.role === "admin" || user?.role === "super-admin";
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b">
@@ -50,11 +49,6 @@ export default function Navbar() {
             </button>
           )}
 
-          {isAdmin && (
-            <Link href="/admin" className="hidden lg:block text-[10px] font-bold uppercase tracking-widest text-[var(--accent)] hover:underline mr-2">
-              Dashboard
-            </Link>
-          )}
 
           {user ? (
             <div className="hidden md:flex flex-col items-center group cursor-pointer relative" onClick={logout}>
@@ -115,7 +109,6 @@ export default function Navbar() {
             <Link href="/store" className="text-lg font-bold hover:text-[var(--accent)] transition-colors" onClick={() => setIsMenuOpen(false)}>Store</Link>
             <Link href="/blog" className="text-lg font-bold hover:text-[var(--accent)] transition-colors" onClick={() => setIsMenuOpen(false)}>Blog</Link>
             <Link href="/contact" className="text-lg font-bold hover:text-[var(--accent)] transition-colors" onClick={() => setIsMenuOpen(false)}>Contact</Link>
-            {isAdmin && <Link href="/admin" className="text-lg font-bold text-[var(--accent)] hover:underline" onClick={() => setIsMenuOpen(false)}>Admin Dashboard</Link>}
           </nav>
           <div className="pt-4 border-t">
             {user ? (

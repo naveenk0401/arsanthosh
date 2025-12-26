@@ -9,6 +9,18 @@ const AppError = require("../utils/AppError");
  */
 class AuthService {
     /**
+     * Generates a random alphanumeric secret key.
+     */
+    generateSecretKey() {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        for (let i = 0; i < 8; i++) {
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+        return result;
+    }
+
+    /**
      * Generates a 6-digit random OTP.
      */
     generateOTP() {
@@ -137,7 +149,7 @@ class AuthService {
     /**
      * Handles user login.
      */
-    async login(email, password) {
+    async login(email, password, secretKeyInput) {
         const user = await User.findOne({ email });
         if (!user || !(await bcrypt.compare(password, user.password))) {
             throw new AppError("Invalid email or password", 401);
@@ -156,6 +168,33 @@ class AuthService {
             throw new AppError("Your account is pending approval.", 403);
         }
 
+        // Super Admin Secret Key Check
+        if (user.role === "super-admin") {
+            // If user has no secret key yet (fist time or reset), generate one
+            if (!user.secretKey) {
+                const newKey = this.generateSecretKey();
+                user.secretKey = newKey;
+                await user.save();
+                return {
+                    tempSecretKey: newKey,
+                    message: "First-time login: A new Security Secret has been generated for you. Please save it securely.",
+                    user: { id: user._id, name: user.name, email: user.email, role: user.role },
+                    token: this.generateToken(user._id)
+                };
+            }
+
+            if (!secretKeyInput) {
+                return {
+                    requiresSecret: true,
+                    message: "Super Admin authorization required. Please enter your Security Secret Key."
+                };
+            }
+
+            if (secretKeyInput !== user.secretKey) {
+                throw new AppError("Invalid Security Secret Key", 401);
+            }
+        }
+
         return {
             user: {
                 id: user._id,
@@ -164,6 +203,46 @@ class AuthService {
                 role: user.role,
             },
             token: this.generateToken(user._id),
+        };
+    }
+
+    /**
+     * Request Secret Key Reset (OTP sent via email)
+     */
+    async requestSecretReset(email) {
+        const user = await User.findOne({ email, role: "super-admin" });
+        if (!user) throw new AppError("Super Admin access not found", 404);
+
+        const otp = this.generateOTP();
+        user.secretResetOtp = otp;
+        user.secretResetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+        await user.save();
+
+        await emailService.sendOTP(email, otp); // Reusing OTP sender
+        return { message: "Security override OTP sent to email." };
+    }
+
+    /**
+     * Verifies OTP and generates a new secret key
+     */
+    async verifySecretResetAndGenerate(email, otp) {
+        const user = await User.findOne({
+            email,
+            secretResetOtp: otp,
+            secretResetExpires: { $gt: Date.now() }
+        });
+
+        if (!user) throw new AppError("Invalid or expired Security OTP", 400);
+
+        const newKey = this.generateSecretKey();
+        user.secretKey = newKey;
+        user.secretResetOtp = undefined;
+        user.secretResetExpires = undefined;
+        await user.save();
+
+        return {
+            newSecretKey: newKey,
+            message: "Success. Your new Security Secret has been generated."
         };
     }
 

@@ -12,8 +12,8 @@ class ProductController {
         // Filtering
         if (category) query.category = category;
         if (isFeatured) query.isFeatured = isFeatured === "true";
-        if (status) query.status = status; // Usually for admin to see drafts
-        else query.status = "published"; // Customers only see published
+        if (status && status !== "all") query.status = status;
+        else if (!status) query.status = "published";
 
         // Price Range
         if (minPrice || maxPrice) {
@@ -82,6 +82,22 @@ class ProductController {
         res.status(201).json({
             success: true,
             data: product
+        });
+    });
+
+    // Get product by slug (Public)
+    getProductBySlug = catchAsync(async (req, res) => {
+        const product = await Product.findOne({ slug: req.params.slug, status: "published" });
+        if (!product) throw new AppError("Product not found", 404);
+
+        const reviews = await Review.find({ productId: product._id }).sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                ...product._doc,
+                reviews
+            }
         });
     });
 

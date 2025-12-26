@@ -10,9 +10,21 @@ class AuthController {
     });
 
     login = catchAsync(async (req, res) => {
-        const { email, password } = req.body;
-        const result = await authService.login(email, password);
-        return ApiResponse.success(res, 200, result, "Login successful");
+        const { email, password, secretKey } = req.body;
+        const result = await authService.login(email, password, secretKey);
+        return ApiResponse.success(res, 200, result, "Auth handled successfully");
+    });
+
+    requestSecretReset = catchAsync(async (req, res) => {
+        const { email } = req.body;
+        const result = await authService.requestSecretReset(email);
+        return ApiResponse.success(res, 200, result);
+    });
+
+    verifySecretReset = catchAsync(async (req, res) => {
+        const { email, otp } = req.body;
+        const result = await authService.verifySecretResetAndGenerate(email, otp);
+        return ApiResponse.success(res, 200, result);
     });
 
     verify = catchAsync(async (req, res) => {

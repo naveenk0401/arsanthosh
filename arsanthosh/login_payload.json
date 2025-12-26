@@ -1,0 +1,5 @@
+{
+    "email": "tester-admin@example.com",
+    "password": "AdminPassword123",
+    "secretKey": "SECRET123"
+}

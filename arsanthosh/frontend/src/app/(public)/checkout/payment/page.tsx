@@ -7,22 +7,62 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 export default function PaymentGateway() {
-    const { cartTotal, clearCart } = useCart();
+    const { cartTotal, clearCart, cart } = useCart();
     const router = useRouter();
     const [method, setMethod] = useState("card");
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
-
-    const handlePayment = (e: React.FormEvent) => {
+    const handlePayment = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsProcessing(true);
 
-        // Simulate processing
-        setTimeout(() => {
+        const customerName = (document.getElementById('customerName') as HTMLInputElement)?.value;
+        const address = (document.getElementById('address') as HTMLInputElement)?.value;
+        const phone = (document.getElementById('phone') as HTMLInputElement)?.value;
+
+        if (!customerName || !address || !phone) {
+            alert("Please fill in all shipping details");
             setIsProcessing(false);
-            setIsSuccess(true);
-            clearCart();
-        }, 3000);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/orders`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`
+                },
+                body: JSON.stringify({
+                    customerName,
+                    address,
+                    phone,
+                    totalAmount: cartTotal * 1.18,
+                    paymentMethod: method === "cod" ? "COD" : method === "card" ? "Card" : "UPI",
+                    items: cart.map(item => ({
+                        name: item.name,
+                        quantity: item.quantity,
+                        price: parseInt(item.price.replace(/[^\d]/g, "")),
+                        productId: null,
+                        image: item.image
+                    }))
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setIsSuccess(true);
+                clearCart();
+            } else {
+                alert("Order failed: " + (data.message || "Unknown error"));
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Order failed due to network error");
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     if (isSuccess) {
@@ -56,7 +96,7 @@ export default function PaymentGateway() {
 
             <div className="max-w-4xl mx-auto px-6 pb-24">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    {/* Left: Payment Method Selection */}
+                    {/* Payment Method Selection */}
                     <div className="space-y-8">
                         <div>
                             <h2 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6">Payment Method</h2>
@@ -64,7 +104,7 @@ export default function PaymentGateway() {
                                 {[
                                     { id: "card", name: "Credit / Debit Card", icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
                                     { id: "upi", name: "UPI (Google Pay / PhonePe)", icon: "M13 10V3L4 14h7v7l9-11h-7z" },
-                                    { id: "net", name: "Net Banking", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m4 0h1m-5 4h1m4 0h1m-5 4h1m4 0h1" }
+                                    { id: "cod", name: "Cash on Delivery", icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9" }
                                 ].map((m) => (
                                     <button
                                         key={m.id}
@@ -80,52 +120,21 @@ export default function PaymentGateway() {
                             </div>
                         </div>
 
-                        {method === "card" && (
-                            <form onSubmit={handlePayment} className="bg-white p-8 border border-gray-100 shadow-sm space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Cardholder Name</label>
-                                    <input required type="text" className="w-full px-4 py-3 bg-gray-50 border border-transparent outline-none focus:bg-white focus:border-[var(--accent)] text-sm transition-all" placeholder="JOHN DOE" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Card Number</label>
-                                    <input required type="text" className="w-full px-4 py-3 bg-gray-50 border border-transparent outline-none focus:bg-white focus:border-[var(--accent)] text-sm transition-all" placeholder="XXXX XXXX XXXX XXXX" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Expiry (MM/YY)</label>
-                                        <input required type="text" className="w-full px-4 py-3 bg-gray-50 border border-transparent outline-none focus:bg-white focus:border-[var(--accent)] text-sm transition-all" placeholder="MM/YY" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">CVV</label>
-                                        <input required type="text" className="w-full px-4 py-3 bg-gray-50 border border-transparent outline-none focus:bg-white focus:border-[var(--accent)] text-sm transition-all" placeholder="123" />
-                                    </div>
-                                </div>
-                                <button
-                                    disabled={isProcessing}
-                                    className="w-full bg-black text-white py-5 font-bold uppercase tracking-widest text-xs hover:bg-[var(--accent)] transition-all shadow-lg flex items-center justify-center gap-4"
-                                >
-                                    {isProcessing ? (
-                                        <>
-                                            <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                                            Processing...
-                                        </>
-                                    ) : `Pay ₹${cartTotal.toLocaleString()}`}
-                                </button>
-                            </form>
-                        )}
+                        {/* Address Input (Simple for now) */}
+                        <div className="space-y-4">
+                            <h2 className="text-sm font-bold uppercase tracking-widest text-gray-400">Shipping Details</h2>
+                            <input id="customerName" placeholder="Full Name" required className="w-full p-4 bg-gray-50 border border-gray-100 focus:border-black outline-none" />
+                            <input id="address" placeholder="Shipping Address" required className="w-full p-4 bg-gray-50 border border-gray-100 focus:border-black outline-none" />
+                            <input id="phone" placeholder="Phone Number" required className="w-full p-4 bg-gray-50 border border-gray-100 focus:border-black outline-none" />
+                        </div>
 
-                        {(method === "upi" || method === "net") && (
-                            <div className="bg-white p-8 border border-gray-100 shadow-sm text-center">
-                                <p className="text-gray-400 text-sm mb-6">Payment method selection for <strong>{method.toUpperCase()}</strong> will be available in the next integration step.</p>
-                                <button
-                                    onClick={handlePayment}
-                                    disabled={isProcessing}
-                                    className="w-full bg-black text-white py-5 font-bold uppercase tracking-widest text-xs hover:bg-[var(--accent)] transition-all shadow-lg flex items-center justify-center gap-4"
-                                >
-                                    {isProcessing ? "Connecting to Gateway..." : "Proceed to Sandbox"}
-                                </button>
-                            </div>
-                        )}
+                        <button
+                            onClick={handlePayment}
+                            disabled={isProcessing}
+                            className="w-full bg-black text-white py-5 font-bold uppercase tracking-widest text-xs hover:bg-[var(--accent)] transition-all shadow-lg flex items-center justify-center gap-4"
+                        >
+                            {isProcessing ? "Processing Order..." : method === "cod" ? "Place Order (COD)" : `Pay ₹${(cartTotal * 1.18).toLocaleString()}`}
+                        </button>
                     </div>
 
                     {/* Right: Summary Container */}

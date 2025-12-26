@@ -16,6 +16,14 @@ app.use("/api/projects", require("./routes/projectRoutes"));
 app.use("/api/inquiries", require("./routes/inquiryRoutes"));
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/reviews", require("./routes/reviewRoutes"));
+app.use("/api/stats", require("./routes/statsRoutes"));
+app.use("/api/upload", require("./routes/uploadRoutes"));
+app.use("/api/payments", require("./routes/paymentRoutes"));
+app.use("/api/orders", require("./routes/orderRoutes"));
+
+// Serve static files
+const path = require("path");
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // Catch-all route for undefined paths
 app.all("*", (req, res, next) => {

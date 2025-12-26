@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
-import { products, Product } from "@/data/products";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { api } from "@/utils/api";
 
 const categories = ["All", "Fittings", "Security", "Hardware", "Kitchen", "Decor"];
 const ITEMS_PER_PAGE = 6;
 
 export default function StorePage() {
+    const [products, setProducts] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState("All");
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState("featured"); // featured, price-low, price-high
@@ -20,13 +22,26 @@ export default function StorePage() {
     const { setIsCartOpen } = useCart();
     const router = useRouter();
 
+    useEffect(() => {
+        fetchProducts();
+    }, []);
+
+    const fetchProducts = async () => {
+        setIsLoading(true);
+        const response: any = await api.get("/products");
+        if (response.success) {
+            setProducts(response.data);
+        }
+        setIsLoading(false);
+    };
+
     // Filtering & Sorting Logic
-    const filteredProducts = products
+    const filteredProducts = (products.length > 0 ? products : [])
         .filter(p => activeFilter === "All" || p.category === activeFilter)
         .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
         .sort((a, b) => {
-            if (sortBy === "price-low") return a.numericPrice - b.numericPrice;
-            if (sortBy === "price-high") return b.numericPrice - a.numericPrice;
+            if (sortBy === "price-low") return a.price - b.price;
+            if (sortBy === "price-high") return b.price - a.price;
             return 0; // featured (default)
         });
 
@@ -97,10 +112,10 @@ export default function StorePage() {
                     {paginatedProducts.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-16">
                             {paginatedProducts.map((product) => (
-                                <Link href={`/store/${product.id}`} key={product.id} className="group flex flex-col items-center text-center">
+                                <Link href={`/store/${product.slug}`} key={product._id} className="group flex flex-col items-center text-center">
                                     <div className="relative aspect-square w-full bg-white overflow-hidden rounded-sm shadow-md mb-8">
                                         <img
-                                            src={product.image}
+                                            src={product.images?.[0] || "https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800&auto=format&fit=crop"}
                                             alt={product.name}
                                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                         />
@@ -110,10 +125,14 @@ export default function StorePage() {
                                     </div>
 
                                     <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--accent)] transition-colors">{product.name}</h3>
-                                    <p className="text-[var(--muted)] text-xs md:text-sm leading-relaxed mb-4 max-w-xs">{product.desc}</p>
-                                    <p className="text-lg font-bold text-[var(--accent)]">{product.price}</p>
+                                    <p className="text-[var(--muted)] text-xs md:text-sm leading-relaxed mb-4 max-w-xs line-clamp-2">{product.description}</p>
+                                    <p className="text-lg font-bold text-[var(--accent)]">₹{product.price.toLocaleString()}</p>
                                 </Link>
                             ))}
+                        </div>
+                    ) : isLoading ? (
+                        <div className="flex justify-center items-center py-40">
+                            <div className="w-12 h-12 border-4 border-gray-100 border-t-[var(--accent)] rounded-full animate-spin" />
                         </div>
                     ) : (
                         <div className="text-center py-20">
