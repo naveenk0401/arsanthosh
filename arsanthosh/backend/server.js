@@ -14,6 +14,8 @@ app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", require("./routes/projectRoutes"));
 app.use("/api/inquiries", require("./routes/inquiryRoutes"));
+app.use("/api/products", require("./routes/productRoutes"));
+app.use("/api/reviews", require("./routes/reviewRoutes"));
 
 // Catch-all route for undefined paths
 app.all("*", (req, res, next) => {
