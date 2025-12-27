@@ -1,6 +1,7 @@
 const Inquiry = require("../models/Inquiry");
 const emailService = require("./emailService");
 const AppError = require("../utils/AppError");
+const activityService = require("./activityService");
 
 /**
  * Service to handle Inquiry Business Logic.
@@ -14,6 +15,12 @@ class InquiryService {
     async createInquiry(data) {
         // 1. Save to Database
         const inquiry = await Inquiry.create(data);
+
+        // 2. Log Activity
+        await activityService.logActivity("INQUIRY", `New consultation request from ${inquiry.name} (${inquiry.serviceType})`, {
+            targetTab: "inquiries",
+            targetId: inquiry._id
+        });
 
         // 2. Send Notification Email to Admin (Async - don't block response)
         // Note: In a real app, you might want to queue this or handle failures more robustly.

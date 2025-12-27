@@ -1,6 +1,7 @@
 const Payment = require("../models/Payment");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const activityService = require("../services/activityService");
 
 class PaymentController {
     // Create a new payment/order
@@ -18,6 +19,13 @@ class PaymentController {
             customerName: customerName || (req.user ? req.user.name : "Guest"),
             userId: req.user ? req.user._id : null,
             type: type || "Product"
+        });
+
+        // Log Activity
+        await activityService.logActivity("PAYMENT", `Transaction verified: ${payment.transactionId} - ₹${amount} (${customerName})`, {
+            adminId: req.user?.id,
+            targetTab: "payments",
+            targetId: payment._id
         });
 
         res.status(201).json({

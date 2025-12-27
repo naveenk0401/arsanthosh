@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "@/utils/api";
+import CustomDatePicker from "../common/CustomDatePicker";
 
 export default function BookingForm({ isOpen, onCloseAction }: { isOpen: boolean, onCloseAction: () => void }) {
     const [formData, setFormData] = useState({
@@ -119,13 +120,12 @@ Project Type: ${formData.service}`;
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] uppercase font-bold tracking-widest text-gray-600">Preferred Date</label>
-                                <input
-                                    type="date"
-                                    required
-                                    className="w-full border-b border-gray-300 py-3 focus:border-[var(--accent)] outline-none text-sm cursor-pointer text-black"
+                                <CustomDatePicker
+                                    label="Preferred Date"
                                     value={formData.date}
-                                    onChange={e => setFormData({ ...formData, date: e.target.value })}
+                                    placeholder="Select Appointment Date"
+                                    onChange={(val) => setFormData({ ...formData, date: val })}
+                                    required
                                 />
                             </div>
                         </div>

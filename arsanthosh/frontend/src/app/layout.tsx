@@ -7,7 +7,7 @@ import CartNotification from "@/components/common/CartNotification";
 import CartSidebar from "@/components/layout/CartSidebar";
 
 export const metadata: Metadata = {
-  title: "Interior Design & Hardware Store",
+  title: "architech santhosh",
   description:
     "Home & Office Interior Design, Modular Kitchen and Premium Hardware Store",
 };

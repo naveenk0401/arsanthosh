@@ -1,6 +1,8 @@
 const Order = require("../models/Order");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const activityService = require("../services/activityService");
+const emailService = require("../services/emailService");
 
 class OrderController {
     // Create new order (Public/Private)
@@ -21,6 +23,12 @@ class OrderController {
             paymentMethod,
             paymentStatus: paymentMethod === "COD" ? "Pending" : "Completed", // Assume online payments are verified before this call for now
             orderStatus: "Pending"
+        });
+
+        // Log Activity
+        await activityService.logActivity("PAYMENT", `New Order #${newOrder.orderId} placed by ${customerName} (₹${totalAmount})`, {
+            targetTab: "payments",
+            targetId: newOrder._id
         });
 
         res.status(201).json({
@@ -56,8 +64,33 @@ class OrderController {
         const order = await Order.findById(orderId);
         if (!order) throw new AppError("Order not found", 404);
 
+        const oldStatus = order.orderStatus;
         order.orderStatus = status;
+
+        // Special handling for approval
+        if (status === "Approved" && oldStatus !== "Approved") {
+            // Generate a unique tracking number if not already present
+            if (!order.trackingNumber) {
+                order.trackingNumber = `TRK-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+            }
+
+            // Send Confirmation Email
+            try {
+                await emailService.sendOrderConfirmation(order.email, order);
+            } catch (err) {
+                console.error("Failed to send order approval email:", err);
+                // We continue even if email fails, but log it
+            }
+        }
+
         await order.save();
+
+        // Log Activity
+        await activityService.logActivity("SYSTEM", `Order #${order.orderId} status updated to: ${status}`, {
+            adminId: req.user?.id,
+            targetTab: "payments",
+            targetId: order._id
+        });
 
         res.status(200).json({
             success: true,

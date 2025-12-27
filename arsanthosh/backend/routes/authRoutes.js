@@ -20,6 +20,10 @@ router.get("/pending-admins", protect, restrictTo("super-admin"), authController
 router.patch("/approve-admin/:adminId", protect, restrictTo("super-admin"), authController.approveAdmin);
 router.get("/users", protect, restrictTo("admin", "super-admin"), authController.getUsers);
 
+router.post("/staff/create", protect, restrictTo("super-admin"), authController.createStaff);
+router.post("/staff/onboarding", protect, authController.completeOnboarding);
+router.get("/staff/directory", protect, restrictTo("super-admin"), authController.getStaff);
+
 // Super Admin Secondary Auth Override
 router.post("/forgot-secret", authController.requestSecretReset);
 router.post("/reset-secret", authController.verifySecretReset);

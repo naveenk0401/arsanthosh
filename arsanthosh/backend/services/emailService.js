@@ -51,6 +51,18 @@ class EmailService {
   }
 
   /**
+   * Sends onboarding credentials to a new Admin.
+   */
+  async sendAdminCredentials(email, password, name) {
+    const { adminCredentialsTemplate } = require("../utils/emailTemplates");
+    return this._send({
+      to: email,
+      subject: "Your Admin Portal Credentials - Architect Santhosh",
+      html: adminCredentialsTemplate(name, email, password),
+    }, `Admin credentials sent to ${email}`);
+  }
+
+  /**
    * Internal helper to send mail via NodeMailer.
    */
   async _send(options, successLog) {

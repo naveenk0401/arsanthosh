@@ -49,43 +49,47 @@ function VerifyOTPContent() {
     };
 
     return (
-        <div className="bg-white w-full max-w-md p-8 md:p-12 shadow-xl border border-gray-100">
-            <div className="text-center mb-10">
-                <div className="w-12 h-12 bg-[var(--accent)] rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        <div className="bg-white w-full max-w-md p-6 md:p-12 shadow-2xl border border-gray-50 rounded-sm">
+            <div className="text-center mb-8 md:mb-10">
+                <div className="w-16 h-16 bg-[var(--accent)]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-8 h-8 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
-                <h1 className="text-3xl font-bold mb-2">Check Your Email</h1>
-                <p className="text-[var(--muted)] text-sm">We&apos;ve sent a 6-digit verification code to <span className="font-bold text-[var(--primary)]">{email}</span></p>
+                <h1 className="text-2xl md:text-3xl font-bold mb-2">Verify Account</h1>
+                <p className="text-[var(--muted)] text-xs md:text-sm">We&apos;ve sent a 6-digit code to <span className="text-[var(--primary)] font-bold">{email}</span></p>
             </div>
+
+            {error && (
+                <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-medium">
+                    {error}
+                </div>
+            )}
 
             <form onSubmit={handleVerify} className="space-y-6">
                 <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gray-500 text-center block w-full">Verification Code</label>
+                    <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-500">Verification Code</label>
                     <input
                         type="text"
+                        required
                         maxLength={6}
-                        autoFocus
-                        disabled={isLoading}
-                        className="w-full text-center text-4xl font-bold tracking-[0.5em] py-4 bg-gray-50 border border-gray-200 outline-none focus:border-[var(--accent)] transition-colors disabled:opacity-50"
+                        className="w-full px-4 py-4 bg-gray-50 border border-gray-100 outline-none focus:border-[var(--accent)] transition-colors text-center text-2xl tracking-[0.5em] font-bold"
                         placeholder="000000"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                     />
-                    {error && <p className="text-red-500 text-xs text-center mt-2 font-medium">{error}</p>}
                 </div>
 
                 <button
                     disabled={isLoading}
-                    className="w-full bg-[var(--primary)] text-white py-4 font-bold hover:bg-black transition-all uppercase tracking-widest text-sm disabled:bg-gray-400"
+                    className="w-full bg-[var(--primary)] text-white py-4 font-bold hover:bg-black transition-all uppercase tracking-widest text-xs md:text-sm disabled:bg-gray-400"
                 >
-                    {isLoading ? "Verifying..." : "Verify & Create Account"}
+                    {isLoading ? "Verifying..." : "Verify & Register"}
                 </button>
             </form>
 
-            <p className="mt-8 text-center text-sm text-[var(--muted)]">
-                Didn&apos;t receive the code?{" "}
+            <p className="mt-8 text-center text-xs md:text-sm text-[var(--muted)]">
+                Didn&apos;t receive code?{" "}
                 <button className="text-[var(--accent)] font-bold hover:underline">
                     Resend OTP
                 </button>
@@ -99,7 +103,7 @@ export default function VerifyOTPPage() {
         <main className="min-h-screen bg-[var(--bg)]">
             <Navbar />
             <div className="flex items-center justify-center px-6 py-12 md:py-24">
-                <Suspense fallback={<div className="text-center p-12 bg-white shadow-xl border border-gray-100 w-full max-w-md">Loading...</div>}>
+                <Suspense fallback={<div className="text-center p-12 bg-white shadow-xl border border-gray-50 w-full max-w-md">Loading...</div>}>
                     <VerifyOTPContent />
                 </Suspense>
             </div>

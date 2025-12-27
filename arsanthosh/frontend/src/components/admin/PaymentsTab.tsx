@@ -6,6 +6,9 @@ export default function PaymentsTab() {
     const [isLoading, setIsLoading] = useState(true);
 
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
         fetchOrders();
@@ -28,8 +31,51 @@ export default function PaymentsTab() {
         }
     };
 
+    const handleApproveClick = () => {
+        setShowConfirmModal(true);
+    };
+
+    const confirmApproval = async () => {
+        if (!selectedOrder) return;
+        setIsProcessing(true);
+
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/orders/${selectedOrder._id}/status`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: "Approved" })
+            });
+
+            if (res.ok) {
+                // Show success animation
+                setShowSuccess(true);
+
+                // Wait for 2 seconds before closing
+                setTimeout(() => {
+                    setShowSuccess(false);
+                    setShowConfirmModal(false);
+                    setSelectedOrder(null);
+                    fetchOrders();
+                }, 2000);
+            } else {
+                alert("Failed to approve order");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("An error occurred");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     const updateStatus = async (orderId: string, status: string) => {
+        if (status === "Approved") return handleApproveClick();
         if (!confirm(`Mark order as ${status}?`)) return;
+
         try {
             const token = localStorage.getItem("token");
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/orders/${orderId}/status`, {
@@ -223,6 +269,14 @@ export default function PaymentsTab() {
 
                         {/* Body */}
                         <div className="p-4 sm:p-8 overflow-y-auto space-y-6 sm:space-y-8">
+                            {/* Tracking Info (If Approved) */}
+                            {selectedOrder.trackingNumber && (
+                                <div className="p-4 bg-green-50 border border-green-100 rounded-lg">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-green-600 mb-1">Tracking Number</p>
+                                    <p className="font-mono font-bold text-lg text-green-900">{selectedOrder.trackingNumber}</p>
+                                </div>
+                            )}
+
                             {/* Status & Customer Info */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                                 <div className="space-y-4">
@@ -311,6 +365,68 @@ export default function PaymentsTab() {
                                 Close
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Approval Confirmation Modal */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+                    <div className="bg-white w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 rounded-2xl border border-gray-100">
+                        {showSuccess ? (
+                            <div className="p-12 text-center animate-in fade-in zoom-in-90 duration-500">
+                                <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(34,197,94,0.4)] animate-bounce">
+                                    <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-2xl font-black font-display uppercase italic tracking-tighter text-gray-900">Order Approved!</h3>
+                                <p className="text-gray-500 text-xs mt-3 font-bold uppercase tracking-widest">Confirmation email has been sent.</p>
+                                <div className="mt-8 flex justify-center">
+                                    <div className="flex gap-1">
+                                        {[1, 2, 3].map(i => (
+                                            <div key={i} className={`w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse delay-${i * 200}`} />
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="p-8 pb-0 flex flex-col items-center">
+                                    <div className="w-16 h-16 bg-yellow-50 rounded-full flex items-center justify-center mb-6 border border-yellow-100">
+                                        <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-xl font-black font-display uppercase tracking-tight text-center text-gray-900 leading-tight">Confirm Order Approval</h3>
+                                    <p className="text-gray-500 text-[11px] text-center mt-3 uppercase tracking-widest font-bold leading-relaxed px-4">
+                                        Approving this order will generate a <span className="text-black">Tracking Number</span> and send an <span className="text-black">Order Confirmation Email</span> to <span className="italic">{selectedOrder?.email}</span>.
+                                    </p>
+                                </div>
+
+                                <div className="p-8 space-y-3">
+                                    <button
+                                        disabled={isProcessing}
+                                        onClick={confirmApproval}
+                                        className={`w-full py-4 rounded-xl text-white font-black text-xs uppercase tracking-[0.2em] shadow-lg transition-all flex items-center justify-center gap-3 ${isProcessing ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-green-600 hover:shadow-green-200'}`}
+                                    >
+                                        {isProcessing ? (
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        ) : (
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                                        )}
+                                        {isProcessing ? 'Processing Approval...' : 'Confirm Approval'}
+                                    </button>
+                                    <button
+                                        disabled={isProcessing}
+                                        onClick={() => setShowConfirmModal(false)}
+                                        className="w-full py-4 rounded-xl text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:text-gray-900 hover:bg-gray-50 transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

@@ -7,10 +7,13 @@ const productSchema = new mongoose.Schema({
     features: [{ type: String }], // Array of key features
     whyChoose: [{ type: String }], // "Why choose this product" bullets
     price: { type: Number, required: true, min: 0 },
+    costPrice: { type: Number, default: 0 }, // For profit calculation
     category: { type: String, required: true },
     images: [{ type: String }], // Array of Image URLs
     videos: [{ type: String }], // Array of Video URLs
     stock: { type: Number, default: 0 },
+    returnedCount: { type: Number, default: 0 },
+    damagedCount: { type: Number, default: 0 },
     status: { type: String, enum: ["draft", "published"], default: "draft" },
     isFeatured: { type: Boolean, default: false },
     averageRating: { type: Number, default: 0 },

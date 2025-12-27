@@ -16,14 +16,14 @@ class AuthController {
     });
 
     requestSecretReset = catchAsync(async (req, res) => {
-        const { email } = req.body;
-        const result = await authService.requestSecretReset(email);
+        const { email, phone } = req.body;
+        const result = await authService.requestSecretReset(email, phone);
         return ApiResponse.success(res, 200, result);
     });
 
     verifySecretReset = catchAsync(async (req, res) => {
-        const { email, otp } = req.body;
-        const result = await authService.verifySecretResetAndGenerate(email, otp);
+        const { email, otp, newPassword } = req.body;
+        const result = await authService.verifySecretResetAndGenerate(email, otp, newPassword);
         return ApiResponse.success(res, 200, result);
     });
 
@@ -47,6 +47,22 @@ class AuthController {
     getUsers = catchAsync(async (req, res) => {
         const result = await authService.getAllUsers();
         return ApiResponse.success(res, 200, result, "Users fetched successfully");
+    });
+
+    createStaff = catchAsync(async (req, res) => {
+        const result = await authService.createAdmin(req.body, req.user._id);
+        return ApiResponse.success(res, 201, result, "Staff created successfully");
+    });
+
+    completeOnboarding = catchAsync(async (req, res) => {
+        const { newPassword } = req.body;
+        const result = await authService.completeOnboarding(req.user._id, newPassword);
+        return ApiResponse.success(res, 200, result, "Onboarding complete");
+    });
+
+    getStaff = catchAsync(async (req, res) => {
+        const result = await authService.getAllStaff();
+        return ApiResponse.success(res, 200, result, "Staff directory fetched");
     });
 }
 

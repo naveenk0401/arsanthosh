@@ -1,20 +1,22 @@
 const User = require("../models/User");
+const OTP = require("../models/OTP");
 const emailService = require("./emailService");
+const AppError = require("../utils/AppError");
+const activityService = require("./activityService");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const AppError = require("../utils/AppError");
 
 /**
  * Service to handle Authentication Business Logic.
  */
 class AuthService {
     /**
-     * Generates a random alphanumeric secret key.
+     * Generates a 12-digit random alphanumeric secret key.
      */
     generateSecretKey() {
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let result = '';
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 12; i++) {
             result += characters.charAt(Math.floor(Math.random() * characters.length));
         }
         return result;
@@ -40,17 +42,16 @@ class AuthService {
      * Registers a new user and sends an OTP.
      */
     async register(userData) {
-        const { name, email, password, role } = userData;
+        const { name, email, password, phone } = userData;
+        const normalizedEmail = email.toLowerCase().trim();
 
-        // Check if verified user exists
-        const userExists = await User.findOne({ email });
-
-        if (userExists && userExists.isVerified) {
+        // Check if verified user exists in main collection
+        const userExists = await User.findOne({ email: normalizedEmail });
+        if (userExists) {
             throw new AppError("User already exists", 400);
         }
 
         const otp = this.generateOTP();
-        const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Role & Approval Logic
@@ -65,62 +66,61 @@ class AuthService {
             isApproved = false; // Needs super-admin approval
         }
 
-        let user;
-        if (userExists && !userExists.isVerified) {
-            // Update existing unverified user
-            userExists.name = name;
-            userExists.password = hashedPassword;
-            userExists.role = finalRole;
-            userExists.isApproved = isApproved;
-            userExists.otp = otp;
-            userExists.otpExpires = otpExpires;
-            user = await userExists.save();
-        } else {
-            // Create new unverified user
-            user = await User.create({
-                name,
-                email,
-                password: hashedPassword,
-                role: finalRole,
-                isVerified: false,
-                isApproved,
-                otp,
-                otpExpires,
-            });
-        }
+        const newUserPayload = {
+            name,
+            email: normalizedEmail,
+            password: hashedPassword,
+            phone,
+            role: finalRole,
+            isApproved,
+            isVerified: true
+        };
+
+        // Save to temporary OTP collection (upsert)
+        await OTP.findOneAndUpdate(
+            { email: normalizedEmail },
+            { otp, userData: newUserPayload },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
 
         // Send email
-        await emailService.sendOTP(email, otp);
+        await emailService.sendOTP(normalizedEmail, otp);
 
         return {
             message: "OTP sent to email. Please verify to complete registration.",
-            email,
+            email: normalizedEmail,
         };
     }
 
     /**
-     * Verifies the OTP.
+     * Verifies the OTP and creates the user.
      */
     async verifyOTP(email, otp) {
-        const user = await User.findOne({
-            email,
-            otp,
-            otpExpires: { $gt: Date.now() }
-        });
+        const normalizedEmail = email.toLowerCase().trim();
 
-        if (!user) throw new AppError("Invalid or expired OTP", 400);
-
-        user.isVerified = true;
-        user.otp = undefined;
-        user.otpExpires = undefined;
-
-        // Auto-approve regular users
-        if (user.role === "user") {
-            user.isApproved = true;
-            emailService.sendWelcomeEmail(user.email, user.name).catch(console.error);
+        // 1. Find OTP entry
+        const otpRecord = await OTP.findOne({ email: normalizedEmail, otp });
+        if (!otpRecord) {
+            throw new AppError("Invalid or expired OTP", 400);
         }
 
-        await user.save();
+        // 2. Create actual user in main collection
+        const user = await User.create(otpRecord.userData);
+
+        // 3. Delete temporary record
+        await OTP.deleteOne({ _id: otpRecord._id });
+
+        // 4. Handle post-creation logic
+        let secretKey = null;
+        if (user.role === "super-admin" || user.role === "admin") {
+            secretKey = this.generateSecretKey();
+            user.secretKey = secretKey;
+            await user.save();
+        }
+
+        if (user.role === "user") {
+            emailService.sendWelcomeEmail(user.email, user.name).catch(console.error);
+        }
 
         if (user.role === "admin") {
             return {
@@ -136,13 +136,15 @@ class AuthService {
         }
 
         return {
+            message: (user.role === "super-admin" || user.role === "admin") ? "Verification successful. SAVE YOUR SECRET KEY!" : "Verification successful",
+            secretKey: secretKey || undefined,
             user: {
                 id: user._id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
             },
-            token: this.generateToken(user._id),
+            token: user.role === "super-admin" || user.isApproved ? this.generateToken(user._id) : null,
         };
     }
 
@@ -155,39 +157,29 @@ class AuthService {
             throw new AppError("Invalid email or password", 401);
         }
 
-        if (!user.isVerified) {
-            const otp = this.generateOTP();
-            user.otp = otp;
-            user.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
-            await user.save();
-            await emailService.sendOTP(email, otp);
-            throw new AppError("Account not verified. A new OTP has been sent.", 403);
-        }
-
         if (!user.isApproved) {
             throw new AppError("Your account is pending approval.", 403);
         }
 
-        // Super Admin Secret Key Check
-        if (user.role === "super-admin") {
-            // If user has no secret key yet (fist time or reset), generate one
-            if (!user.secretKey) {
-                const newKey = this.generateSecretKey();
-                user.secretKey = newKey;
-                await user.save();
+        // Admin & Super Admin Secret Key Check
+        if (user.role === "super-admin" || user.role === "admin") {
+            // First time login bypasses secret key check
+            if (user.isFirstLogin) {
                 return {
-                    tempSecretKey: newKey,
-                    message: "First-time login: A new Security Secret has been generated for you. Please save it securely.",
-                    user: { id: user._id, name: user.name, email: user.email, role: user.role },
-                    token: this.generateToken(user._id)
+                    message: "First login successful. Password update required.",
+                    isFirstLogin: true,
+                    user: {
+                        id: user._id,
+                        name: user.name,
+                        email: user.email,
+                        role: user.role,
+                    },
+                    token: this.generateToken(user._id),
                 };
             }
 
             if (!secretKeyInput) {
-                return {
-                    requiresSecret: true,
-                    message: "Super Admin authorization required. Please enter your Security Secret Key."
-                };
+                throw new AppError("Administrative login requires your 12-digit Security Secret Key", 401);
             }
 
             if (secretKeyInput !== user.secretKey) {
@@ -196,6 +188,7 @@ class AuthService {
         }
 
         return {
+            message: "Login successful",
             user: {
                 id: user._id,
                 name: user.name,
@@ -209,40 +202,48 @@ class AuthService {
     /**
      * Request Secret Key Reset (OTP sent via email)
      */
-    async requestSecretReset(email) {
-        const user = await User.findOne({ email, role: "super-admin" });
-        if (!user) throw new AppError("Super Admin access not found", 404);
+    async requestSecretReset(email, phone) {
+        const user = await User.findOne({ email, phone, role: "super-admin" });
+        if (!user) throw new AppError("No Super Admin found with matching email and phone number", 404);
 
         const otp = this.generateOTP();
         user.secretResetOtp = otp;
         user.secretResetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
         await user.save();
 
-        await emailService.sendOTP(email, otp); // Reusing OTP sender
-        return { message: "Security override OTP sent to email." };
+        await emailService.sendOTP(email, otp);
+        return { message: "Security override OTP sent to your verified email." };
     }
 
     /**
-     * Verifies OTP and generates a new secret key
+     * Verifies OTP, updates password and regenerates a new secret key
      */
-    async verifySecretResetAndGenerate(email, otp) {
+    async verifySecretResetAndGenerate(email, otp, newPassword) {
         const user = await User.findOne({
             email,
             secretResetOtp: otp,
-            secretResetExpires: { $gt: Date.now() }
+            secretResetExpires: { $gt: Date.now() },
+            role: "super-admin"
         });
 
-        if (!user) throw new AppError("Invalid or expired Security OTP", 400);
+        if (!user) throw new AppError("Invalid or expired reset OTP", 400);
 
-        const newKey = this.generateSecretKey();
-        user.secretKey = newKey;
+        // Update password
+        user.password = await bcrypt.hash(newPassword, 10);
+
+        // Regenerate secret key
+        const newSecretKey = this.generateSecretKey();
+        user.secretKey = newSecretKey;
+
+        // Clear reset fields
         user.secretResetOtp = undefined;
         user.secretResetExpires = undefined;
+
         await user.save();
 
         return {
-            newSecretKey: newKey,
-            message: "Success. Your new Security Secret has been generated."
+            message: "Password updated and new Security Secret generated. Please save it securely.",
+            newSecretKey
         };
     }
 
@@ -251,6 +252,13 @@ class AuthService {
         if (!admin) throw new AppError("Admin not found", 404);
         admin.isApproved = true;
         await admin.save();
+
+        // Log Activity
+        await activityService.logActivity("STAFF", `Admin account approved: ${admin.name} (${admin.email})`, {
+            targetTab: "staff",
+            targetId: admin._id
+        });
+
         return { message: "Admin approved" };
     }
 
@@ -260,6 +268,87 @@ class AuthService {
 
     async getAllUsers() {
         return await User.find({ role: "user" }).select("-password -otp -otpExpires");
+    }
+
+    /**
+     * Super Admin creates a new Admin account.
+     */
+    async createAdmin(adminData, adminId) {
+        const superAdmin = await User.findById(adminId);
+        if (!superAdmin || superAdmin.role !== "super-admin") {
+            throw new AppError("Only Super Admins can create administrative staff.", 403);
+        }
+
+        const { name, email, password, phone, dob, idProofType, idProofNumber } = adminData;
+
+        const userExists = await User.findOne({ email: email.toLowerCase() });
+        if (userExists) throw new AppError("User with this email already exists.", 400);
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newAdmin = await User.create({
+            name,
+            email: email.toLowerCase().trim(),
+            password: hashedPassword,
+            phone,
+            dob,
+            idProofType,
+            idProofNumber,
+            role: "admin",
+            isApproved: true,
+            isVerified: true,
+            isFirstLogin: true
+        });
+
+        // Send credentials email
+        await emailService.sendAdminCredentials(newAdmin.email, password, newAdmin.name);
+
+        // Log Activity
+        await activityService.logActivity("STAFF", `New Admin created: ${newAdmin.name}`, {
+            adminId: superAdmin._id,
+            targetTab: "staff",
+            targetId: newAdmin._id
+        });
+
+        return {
+            message: "Administrative account created and credentials sent to email.",
+            admin: { id: newAdmin._id, name: newAdmin.name, email: newAdmin.email }
+        };
+    }
+
+    /**
+     * Mandatory first-login onboarding for new admins.
+     */
+    async completeOnboarding(adminId, newPassword) {
+        const admin = await User.findById(adminId);
+        if (!admin) throw new AppError("Staff account not found.", 404);
+        if (!admin.isFirstLogin) throw new AppError("Account is already onboarded.", 400);
+
+        // Update password
+        admin.password = await bcrypt.hash(newPassword, 10);
+        admin.isFirstLogin = false;
+
+        // Generate the 12-digit secret key
+        const secretKey = this.generateSecretKey();
+        admin.secretKey = secretKey;
+
+        await admin.save();
+
+        // Log Activity
+        await activityService.logActivity("STAFF", `Admin onboarding completed: ${admin.name}`, {
+            targetTab: "staff",
+            targetId: admin._id
+        });
+
+        return {
+            message: "Onboarding complete. SAVE YOUR SECURITY SECRET KEY!",
+            secretKey,
+            user: { id: admin._id, name: admin.name, email: admin.email, role: admin.role }
+        };
+    }
+
+    async getAllStaff() {
+        return await User.find({ role: { $in: ["admin", "super-admin"] } }).select("-password");
     }
 }
 

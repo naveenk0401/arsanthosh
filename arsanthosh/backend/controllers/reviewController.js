@@ -2,6 +2,7 @@ const Review = require("../models/Review");
 const Product = require("../models/Product");
 const AppError = require("../utils/AppError");
 const catchAsync = require("../utils/catchAsync");
+const activityService = require("../services/activityService");
 
 class ReviewController {
     // Add a review to a product
@@ -20,6 +21,12 @@ class ReviewController {
             userName,
             rating,
             comment
+        });
+
+        // Log Activity
+        await activityService.logActivity("PRODUCT", `New Review on a product: ${rating} stars`, {
+            targetTab: "products",
+            targetId: productId
         });
 
         // Update product average rating

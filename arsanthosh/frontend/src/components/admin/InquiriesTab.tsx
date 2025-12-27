@@ -21,7 +21,7 @@ export default function InquiriesTab() {
     };
 
     const handleStatusUpdate = async (id: string, newStatus: string) => {
-        const response = await api.patch(`/inquiries/${id}/status`, { status: newStatus });
+        const response = await api.patch(`/inquiries/${id}`, { status: newStatus });
         if (response.success) {
             setInquiries(prev => prev.map(i => i._id === id ? { ...i, status: newStatus } : i));
         } else {

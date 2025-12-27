@@ -2,6 +2,7 @@ const Product = require("../models/Product");
 const Review = require("../models/Review");
 const AppError = require("../utils/AppError");
 const catchAsync = require("../utils/catchAsync");
+const activityService = require("../services/activityService");
 
 class ProductController {
     // Get all products with filtering, searching, and pagination
@@ -79,6 +80,13 @@ class ProductController {
             slug
         });
 
+        // Log Activity
+        await activityService.logActivity("PRODUCT", `New product added: ${product.name}`, {
+            adminId: req.user?.id,
+            targetTab: "products",
+            targetId: product._id
+        });
+
         res.status(201).json({
             success: true,
             data: product
@@ -140,6 +148,13 @@ class ProductController {
         );
 
         if (!product) throw new AppError("Product not found", 404);
+
+        // Log Activity
+        await activityService.logActivity("PRODUCT", `Inventory updated for ${product.name}: ${stock} items in stock`, {
+            adminId: req.user?.id,
+            targetTab: "products",
+            targetId: product._id
+        });
 
         res.status(200).json({
             success: true,

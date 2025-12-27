@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { api } from "@/utils/api";
+import AdminOnboarding from "../admin/AdminOnboarding";
 
 export default function AdminLoginForm() {
     const [formData, setFormData] = useState({ email: "", password: "", secretKey: "" });
@@ -11,13 +12,18 @@ export default function AdminLoginForm() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [isOnboarding, setIsOnboarding] = useState(false);
+    const [onboardingUser, setOnboardingUser] = useState<any>(null);
 
-    // Security States
-    const [showSecretInput, setShowSecretInput] = useState(false);
+    // Security States & Reset Flow
     const [newSecretGenerated, setNewSecretGenerated] = useState<string | null>(null);
     const [isForgotSecret, setIsForgotSecret] = useState(false);
     const [resetOtp, setResetOtp] = useState("");
     const [resetStep, setResetStep] = useState(1); // 1: email, 2: otp -> new key
+
+    // Security Visibility States
+    const [showPassword, setShowPassword] = useState(false);
+    const [showSecretKey, setShowSecretKey] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,18 +39,21 @@ export default function AdminLoginForm() {
         if (response.success) {
             const data = response.data as any;
 
-            // Handle Super Admin Logic
-            if (data.requiresSecret) {
-                setShowSecretInput(true);
-                setIsLoading(false);
+            if (data.isFirstLogin) {
+                setOnboardingUser(data.user);
+                setIsOnboarding(true);
+                // We keep the token but don't call login() yet to keep restricted until onboarding done
+                // Actually, login() sets user in context. We'll call it after onboarding is done.
+                // But we need the token for onboarding API calls. 
+                // api helper usually uses localStorage token if exists. 
+                // Let's set the token manually for now if needed or just use it from response.
+                localStorage.setItem("ars_token", data.token);
                 return;
             }
 
             if (data.tempSecretKey) {
                 setNewSecretGenerated(data.tempSecretKey);
                 login(data.user, data.token);
-                // We show the key, but user is logged in. 
-                // In a real app, maybe block till they confirm.
                 return;
             }
 
@@ -101,6 +110,18 @@ export default function AdminLoginForm() {
         );
     }
 
+    if (isOnboarding && onboardingUser) {
+        return (
+            <AdminOnboarding
+                user={onboardingUser}
+                onComplete={(key) => {
+                    setNewSecretGenerated(key);
+                    setIsOnboarding(false);
+                }}
+            />
+        );
+    }
+
     if (isForgotSecret) {
         return (
             <div className="space-y-6 animate-in slide-in-from-bottom-2">
@@ -146,73 +167,92 @@ export default function AdminLoginForm() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {!showSecretInput ? (
-                    <>
-                        <div className="space-y-4">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 px-1">System Identifier</label>
-                            <input
-                                type="email"
-                                required
-                                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 outline-none text-sm focus:border-[var(--primary)] transition-all text-gray-900 shadow-inner"
-                                placeholder="E.G. ADMIN@ARSANTHOSH.COM"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            />
-                        </div>
+                <div className="space-y-4">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 px-1">Email Address</label>
+                    <input
+                        type="email"
+                        required
+                        className="w-full px-5 py-4 bg-gray-50 border border-gray-100 outline-none text-sm focus:border-[var(--primary)] transition-all text-gray-900 shadow-inner"
+                        placeholder="name@example.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    />
+                </div>
 
-                        <div className="space-y-4">
-                            <div className="flex justify-between px-1">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Authorization Key</label>
-                            </div>
-                            <input
-                                type="password"
-                                required
-                                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 outline-none text-sm focus:border-[var(--primary)] transition-all text-gray-900 shadow-inner"
-                                placeholder="••••••••"
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            />
-                        </div>
-                    </>
-                ) : (
-                    <div className="space-y-4 animate-in slide-in-from-right-4">
-                        <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--primary)] px-2">Secondary Security Secret</label>
-                        <input
-                            type="text"
-                            required
-                            autoFocus
-                            className="w-full px-5 py-4 bg-gray-50 border border-[var(--primary)]/30 outline-none text-xl font-black text-center tracking-[0.4em] text-gray-900 shadow-lg"
-                            placeholder="XXXXXXXX"
-                            value={formData.secretKey}
-                            onChange={(e) => setFormData({ ...formData, secretKey: e.target.value.toUpperCase() })}
-                        />
-                        <div className="flex justify-between items-center px-1">
-                            <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest">Required for Super Admin Access</p>
-                            <button
-                                type="button"
-                                onClick={() => setIsForgotSecret(true)}
-                                className="text-[9px] font-bold text-[var(--primary)] uppercase tracking-widest hover:underline"
-                            >
-                                Forgot Secret?
-                            </button>
-                        </div>
+                <div className="space-y-4">
+                    <div className="flex justify-between px-1">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Password</label>
+                        <button
+                            type="button"
+                            onClick={() => setIsForgotSecret(true)} // Same reset flow for password
+                            className="text-[9px] font-bold text-[var(--accent)] uppercase tracking-widest hover:underline"
+                        >
+                            Forgot Password?
+                        </button>
                     </div>
-                )}
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        className="w-full px-5 py-4 bg-gray-50 border border-gray-100 outline-none text-sm focus:border-[var(--primary)] transition-all text-gray-900 shadow-inner"
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    />
+                    <div className="flex items-center gap-2 px-1">
+                        <input
+                            type="checkbox"
+                            role="checkbox"
+                            id="show-password"
+                            className="w-3 h-3 accent-[var(--accent)]"
+                            checked={showPassword}
+                            onChange={(e) => setShowPassword(e.target.checked)}
+                        />
+                        <label htmlFor="show-password" className="text-[9px] font-bold uppercase tracking-widest text-gray-500 cursor-pointer">Show Password</label>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="flex justify-between px-1">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">Secret Key</label>
+                        <button
+                            type="button"
+                            onClick={() => setIsForgotSecret(true)}
+                            className="text-[9px] font-bold text-[var(--primary)] uppercase tracking-widest hover:underline"
+                        >
+                            Forgot Key?
+                        </button>
+                    </div>
+                    <div className="relative">
+                        <input
+                            type={showSecretKey ? "text" : "password"}
+                            required
+                            className="w-full px-5 py-4 bg-gray-50 border border-[var(--primary)]/20 outline-none text-lg font-black text-center tracking-[0.3em] text-gray-900 shadow-inner focus:border-[var(--primary)] transition-all"
+                            placeholder="12-DIGIT KEY"
+                            value={formData.secretKey}
+                            onChange={(e) => setFormData({ ...formData, secretKey: e.target.value })}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowSecretKey(!showSecretKey)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-[var(--primary)]"
+                        >
+                            {showSecretKey ? "Hide" : "Show"}
+                        </button>
+                    </div>
+                </div>
 
                 <button
                     disabled={isLoading}
                     className="group relative w-full bg-gray-900 text-white py-5 font-black uppercase tracking-[0.3em] text-xs hover:bg-[var(--primary)] transition-all shadow-xl disabled:opacity-50 overflow-hidden"
                 >
-                    <span className="relative z-10">{isLoading ? "Verifying..." : showSecretInput ? "Authorize Access" : "Initiate System Link"}</span>
+                    <span className="relative z-10">{isLoading ? "Verifying..." : "Authorize Access"}</span>
                     <div className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                 </button>
             </form>
 
-            {!showSecretInput && (
-                <p className="text-center text-[9px] text-gray-600 font-bold uppercase tracking-[0.2em] mt-8">
-                    Architect Santhosh &copy; 2025 | Secure Operations Hub
-                </p>
-            )}
+            <p className="text-center text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-8">
+                Architect Santhosh &copy; 2025 | Secure Operations Hub
+            </p>
         </div>
     );
 }
