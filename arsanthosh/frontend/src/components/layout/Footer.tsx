@@ -7,7 +7,7 @@ export default function Footer() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12 mb-12">
                     {/* Company Info */}
                     <div className="space-y-4">
-                        <h3 className="text-xl font-bold tracking-tight">Architect Santhosh</h3>
+                        <img src="/logo.jpg" alt="Architect Santhosh" className="h-16 w-auto object-contain mb-4" />
                         <p className="text-xs md:text-sm text-gray-400 leading-relaxed">
                             Transforming spaces into elegant experiences. Premium interior
                             design and hardware solutions for modern homes and offices.

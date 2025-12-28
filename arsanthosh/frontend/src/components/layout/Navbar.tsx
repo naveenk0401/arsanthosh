@@ -18,7 +18,9 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-white border-b">
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="text-base md:text-xl font-semibold tracking-tight">Architect Santhosh</Link>
+        <Link href="/" className="block w-40">
+          <img src="/logo.jpg" alt="Architect Santhosh" className="h-12 w-auto object-contain" />
+        </Link>
 
         {/* Desktop Menu */}
         <nav className="hidden md:flex gap-6 text-sm font-medium">
