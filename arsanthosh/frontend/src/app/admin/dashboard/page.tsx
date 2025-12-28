@@ -46,7 +46,7 @@ export default function AdminDashboard() {
             api.get("/products?status=all"),
             api.get("/inquiries"),
             api.get("/admin/users"),
-            user?.role === "super-admin" ? api.get("/stats/business?range=monthly") : Promise.resolve({ success: false }),
+            user?.role === "super-admin" ? api.get("/admin/stats?range=monthly") : Promise.resolve({ success: false }),
             api.get("/activities")
         ]);
 

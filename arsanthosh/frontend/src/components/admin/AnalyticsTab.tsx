@@ -18,7 +18,7 @@ export default function AnalyticsTab() {
 
     const fetchStats = async () => {
         setIsLoading(true);
-        const response = await api.get(`/stats/business?range=${range}`);
+        const response = await api.get(`/admin/stats?range=${range}`);
         if (response.success) {
             setData(response.data);
         }
