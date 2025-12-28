@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import BookingForm from "@/components/service/BookingForm";
 
 export default function Hero() {
@@ -36,9 +37,9 @@ export default function Hero() {
           >
             Consult Now
           </button>
-          <button className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-8 md:px-10 py-4 md:py-5 font-bold hover:bg-white/20 transition-all uppercase tracking-widest text-[10px] md:text-sm">
+          <Link href="/portfolio" className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-8 md:px-10 py-4 md:py-5 font-bold hover:bg-white/20 transition-all uppercase tracking-widest text-[10px] md:text-sm text-center">
             View Gallery
-          </button>
+          </Link>
         </div>
 
         <BookingForm isOpen={isBookingOpen} onCloseAction={() => setIsBookingOpen(false)} />
