@@ -45,7 +45,7 @@ console.log(`[SERVER_START] Attempting connection to: ${maskedURI}`);
 mongoose
   .connect(MONGO_URI)
   .then(() => {
-    console.log("✅ Successfully connected to MongoDB Atlas");
+    console.log("✅ connected to MongoDB");
   })
   .catch((err) => {
     console.error("❌ MongoDB connection error:", err.message);
@@ -57,7 +57,6 @@ mongoose
 // Listen on all network interfaces (required for Render/Cloud)
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`[HEALTH_CHECK] Endpoint ready at 0.0.0.0:${PORT}`);
 });
 
 module.exports = app;

@@ -1,53 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ThreeDGallery from "@/components/common/ThreeDGallery";
+import { api } from "@/utils/api";
 
-const categories = ["All", "Villas", "Offices", "Retail", "Luxury Interiors", "Renovations"];
-
-const projects = [
-    {
-        title: "The Oasis Villa",
-        category: "Villas",
-        location: "Bengaluru",
-        image: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=800&auto=format&fit=crop"
-    },
-    {
-        title: "Quantum Tech HQ",
-        category: "Offices",
-        location: "Tirupur",
-        image: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop"
-    },
-    {
-        title: "Elysian Storefront",
-        category: "Retail",
-        location: "Chennai",
-        image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=800&auto=format&fit=crop"
-    },
-    {
-        title: "Sky Penthouse",
-        category: "Luxury Interiors",
-        location: "Hyderabad",
-        image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?q=80&w=800&auto=format&fit=crop"
-    },
-    {
-        title: "Heritage Reborn",
-        category: "Renovations",
-        location: "Coimbatore",
-        image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop"
-    },
-    {
-        title: "Azure Marina Villa",
-        category: "Villas",
-        location: "Kochi",
-        image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop"
-    }
-];
+const categories = ["All", "Residential Architecture", "Commercial Architecture", "Interior Design", "Landscape Design", "Renovation"];
 
 export default function PortfolioPage() {
     const [activeFilter, setActiveFilter] = useState("All");
+    const [projects, setProjects] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            setLoading(true);
+            const response = await api.get("/projects?status=Completed");
+            if (response.success) {
+                setProjects(response.data as any[]);
+            }
+            setLoading(false);
+        };
+        fetchProjects();
+    }, []);
 
     const filteredProjects = activeFilter === "All"
         ? projects
@@ -82,36 +59,47 @@ export default function PortfolioPage() {
             {/* Portfolio Grid */}
             <section className="py-16 md:py-24">
                 <div className="max-w-7xl mx-auto px-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
-                        {filteredProjects.map((project, index) => (
-                            <div key={index} className="group cursor-pointer">
-                                <div className="relative aspect-[3/4] overflow-hidden rounded-sm shadow-xl mb-6">
-                                    <img
-                                        src={project.image}
-                                        alt={project.title}
-                                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                                    />
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <div className="text-white text-center p-6 translate-y-4 group-hover:translate-y-0 transition-transform">
-                                            <p className="text-[10px] uppercase font-bold tracking-[0.2em] mb-2">{project.category}</p>
-                                            <h4 className="text-xl font-bold">{project.title}</h4>
-                                            <p className="text-xs text-gray-300 mt-2">{project.location}</p>
-                                            <div className="mt-6 w-10 h-0.5 bg-[var(--accent)] mx-auto" />
+                    {loading ? (
+                        <div className="text-center py-20">
+                            <div className="inline-block w-8 h-8 border-4 border-gray-100 border-t-[var(--accent)] rounded-full animate-spin"/>
+                            <p className="mt-4 text-xs font-bold uppercase tracking-widest text-gray-400">Curating Portfolio...</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
+                            {filteredProjects.map((project, index) => (
+                                <Link href={`/portfolio/${project.slug}`} key={project._id || index} className="group cursor-pointer block">
+                                    <div className="relative aspect-[3/4] overflow-hidden rounded-sm shadow-xl mb-6">
+                                        {project.images && project.images[0] ? (
+                                            <img
+                                                src={project.images[0]}
+                                                alt={project.title}
+                                                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">NO IMAGE</div>
+                                        )}
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <div className="text-white text-center p-6 translate-y-4 group-hover:translate-y-0 transition-transform">
+                                                <p className="text-[10px] uppercase font-bold tracking-[0.2em] mb-2">{project.category}</p>
+                                                <h4 className="text-xl font-bold">{project.title}</h4>
+                                                <p className="text-xs text-gray-300 mt-2">{project.location}</p>
+                                                <div className="mt-6 w-10 h-0.5 bg-[var(--accent)] mx-auto" />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="flex justify-between items-end">
-                                    <div>
-                                        <h4 className="font-bold text-lg md:text-xl text-gray-900 group-hover:text-[var(--accent)] transition-colors">{project.title}</h4>
-                                        <p className="text-xs text-gray-400 uppercase tracking-widest mt-1">{project.location}</p>
+                                    <div className="flex justify-between items-end">
+                                        <div>
+                                            <h4 className="font-bold text-lg md:text-xl text-gray-900 group-hover:text-[var(--accent)] transition-colors">{project.title}</h4>
+                                            <p className="text-xs text-gray-400 uppercase tracking-widest mt-1">{project.location}</p>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-[var(--accent)] group-hover:translate-x-1 transition-transform">VIEW PROJECT →</span>
                                     </div>
-                                    <span className="text-[10px] font-bold text-[var(--accent)] group-hover:translate-x-1 transition-transform">VIEW PROJECT →</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
 
-                    {filteredProjects.length === 0 && (
+                    {!loading && filteredProjects.length === 0 && (
                         <div className="py-20 text-center text-gray-400">
                             No projects found in this category. More coming soon!
                         </div>

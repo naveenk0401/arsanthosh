@@ -29,7 +29,10 @@ const generateToken = (id) => {
 
 const adminLogin = async (email, password, secretKeyInput) => {
   const normalizedEmail = email.toLowerCase().trim();
-  const admin = await Admin.findOne({ email: normalizedEmail });
+  const admin = await User.findOne({
+    email: normalizedEmail,
+    role: { $in: ["admin", "super-admin"] },
+  });
 
   if (!admin) {
     console.log(`[AUTH_DEBUG] Admin not found for email: ${normalizedEmail}`);
@@ -86,7 +89,7 @@ const adminLogin = async (email, password, secretKeyInput) => {
 };
 
 const createStaff = async (adminData, superAdminId) => {
-  const superAdmin = await Admin.findById(superAdminId);
+  const superAdmin = await User.findById(superAdminId);
   if (!superAdmin || superAdmin.role !== "super-admin") {
     throw new AppError(
       "Only Super Admins can create administrative staff.",
@@ -105,13 +108,13 @@ const createStaff = async (adminData, superAdminId) => {
     role,
   } = adminData;
 
-  const adminExists = await Admin.findOne({ email: email.toLowerCase() });
+  const adminExists = await User.findOne({ email: email.toLowerCase() });
   if (adminExists)
     throw new AppError("Staff with this email already exists.", 400);
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const newAdmin = await Admin.create({
+  const newAdmin = await User.create({
     name,
     email: email.toLowerCase().trim(),
     password: hashedPassword,
@@ -153,7 +156,7 @@ const createStaff = async (adminData, superAdminId) => {
 };
 
 const completeOnboarding = async (adminId, newPassword) => {
-  const admin = await Admin.findById(adminId);
+  const admin = await User.findById(adminId);
   if (!admin) throw new AppError("Staff account not found.", 404);
   if (!admin.isFirstLogin)
     throw new AppError("Account is already onboarded.", 400);
@@ -186,7 +189,9 @@ const completeOnboarding = async (adminId, newPassword) => {
 };
 
 const getAllStaff = async () => {
-  return await Admin.find().select("-password");
+  return await User.find({ role: { $in: ["admin", "super-admin"] } }).select(
+    "-password"
+  );
 };
 
 const getAllUsers = async () => {
@@ -194,7 +199,7 @@ const getAllUsers = async () => {
 };
 
 const approveAdmin = async (adminId) => {
-  const admin = await Admin.findById(adminId);
+  const admin = await User.findById(adminId);
   if (!admin) throw new AppError("Admin not found", 404);
   admin.isApproved = true;
   await admin.save();
@@ -212,7 +217,7 @@ const approveAdmin = async (adminId) => {
 };
 
 const getPendingAdmins = async () => {
-  return await Admin.find({ role: "admin", isApproved: false });
+  return await User.find({ role: "admin", isApproved: false });
 };
 
 module.exports = {

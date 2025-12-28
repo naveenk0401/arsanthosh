@@ -169,7 +169,7 @@ export default function AnalyticsTab() {
                     <div className="mt-8 pt-6 border-t border-gray-50 flex justify-center gap-10">
                         <div className="text-center">
                             <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Total Discovery</p>
-                            <p className="text-sm font-bold mt-1">{data?.inquiryData.reduce((acc: any, cur: any) => acc + cur.count, 0)} leads</p>
+                            <p className="text-sm font-bold mt-1">{(data?.inquiryData || []).reduce((acc: any, cur: any) => acc + cur.count, 0)} leads</p>
                         </div>
                         <div className="text-center">
                             <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Avg Growth</p>
@@ -204,7 +204,7 @@ export default function AnalyticsTab() {
                     <div className="mt-8 pt-6 border-t border-gray-50 flex justify-center gap-10">
                         <div className="text-center">
                             <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Highest Peak</p>
-                            <p className="text-sm font-bold mt-1 text-green-600">₹{Math.max(...(data?.revenueData.map((d: any) => d.revenue) || [0])).toLocaleString()}</p>
+                            <p className="text-sm font-bold mt-1 text-green-600">₹{Math.max(...((data?.revenueData || []).map((d: any) => d.revenue) || [0])).toLocaleString()}</p>
                         </div>
                         <div className="text-center">
                             <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Sustainability</p>

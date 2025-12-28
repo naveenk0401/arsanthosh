@@ -6,6 +6,7 @@ const router = express.Router();
 
 // Public Routes
 router.get("/", projectController.getAllProjects);
+router.get("/slug/:slug", projectController.getProject); // Specific route matches first
 router.get("/:slug", projectController.getProject);
 
 // Protected Admin Routes

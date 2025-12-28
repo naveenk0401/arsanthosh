@@ -9,6 +9,7 @@ export default function ContactPage() {
     const [formData, setFormData] = useState({
         name: "",
         email: "",
+        mobile: "",
         service: "Home Interior Design",
         message: ""
     });
@@ -38,14 +39,14 @@ export default function ContactPage() {
         const response = await api.post("/inquiries", {
             name: formData.name,
             email: formData.email,
-            phone: "", // Optional in DB, not in this form
+            phone: formData.mobile, 
             serviceType,
             message: finalMessage
         });
 
         if (response.success) {
             setStatus("success");
-            setFormData({ name: "", email: "", service: "Home Interior Design", message: "" });
+            setFormData({ name: "", email: "", mobile: "", service: "Home Interior Design", message: "" });
         } else {
             setStatus("error");
             setErrorMessage(response.error?.message || "Failed to send message.");
@@ -150,18 +151,30 @@ export default function ContactPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-500">Service</label>
-                                            <select
-                                                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 outline-none focus:border-[var(--accent)] transition-colors text-sm appearance-none"
-                                                value={formData.service}
-                                                onChange={(e) => setFormData({ ...formData, service: e.target.value })}
-                                            >
-                                                <option>Home Interior Design</option>
-                                                <option>Office Interior Design</option>
-                                                <option>Modular Kitchen</option>
-                                                <option>Hardware Store Inquiry</option>
-                                            </select>
+                                            <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-500">Mobile Number</label>
+                                            <input
+                                                type="tel"
+                                                required
+                                                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 outline-none focus:border-[var(--accent)] transition-colors text-sm"
+                                                placeholder="+91 99999 99999"
+                                                value={formData.mobile}
+                                                onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                                            />
                                         </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-500">Service</label>
+                                        <select
+                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-200 outline-none focus:border-[var(--accent)] transition-colors text-sm appearance-none"
+                                            value={formData.service}
+                                            onChange={(e) => setFormData({ ...formData, service: e.target.value })}
+                                        >
+                                            <option>Home Interior Design</option>
+                                            <option>Office Interior Design</option>
+                                            <option>Modular Kitchen</option>
+                                            <option>Hardware Store Inquiry</option>
+                                        </select>
                                     </div>
 
                                     <div className="space-y-2">
