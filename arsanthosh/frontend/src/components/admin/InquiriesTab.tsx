@@ -15,7 +15,8 @@ export default function InquiriesTab() {
         setIsLoading(true);
         const response = await api.get("/inquiries");
         if (response.success) {
-            setInquiries(response.data as any[]);
+            const allInquiries = response.data as any[];
+            setInquiries(allInquiries.filter(i => i.serviceType !== "Consultation" && !i.message?.toLowerCase().includes("consult")));
         }
         setIsLoading(false);
     };

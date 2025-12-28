@@ -36,7 +36,7 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         if (!authLoading && (!user || (user.role !== "admin" && user.role !== "super-admin"))) {
-            router.push("/ars-management-portal");
+            router.push("/admin/login");
         }
     }, [user, authLoading, router]);
 
@@ -45,7 +45,7 @@ export default function AdminDashboard() {
             api.get("/projects"),
             api.get("/products?status=all"),
             api.get("/inquiries"),
-            api.get("/auth/users"),
+            api.get("/admin/users"),
             user?.role === "super-admin" ? api.get("/stats/business?range=monthly") : Promise.resolve({ success: false }),
             api.get("/activities")
         ]);
@@ -177,7 +177,6 @@ export default function AdminDashboard() {
                                                     key={i}
                                                     onClick={() => {
                                                         if (isClickable) {
-                                                            console.log("Navigating to tab:", effectiveTab);
                                                             setActiveTab(effectiveTab);
                                                             window.scrollTo({ top: 0, behavior: "smooth" });
                                                         }

@@ -52,14 +52,4 @@ const projectSchema = new mongoose.Schema({
     timestamps: true // Adds createdAt and updatedAt automatically
 });
 
-// Pre-save hook to generate slug from title
-projectSchema.pre("save", function (next) {
-    if (!this.isModified("title")) return next();
-    this.slug = this.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-") // Replace non-alphanumeric chars with hyphens
-        .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
-    next();
-});
-
 module.exports = mongoose.model("Project", projectSchema);

@@ -25,7 +25,7 @@ export default function StaffTab() {
 
     const fetchStaff = async () => {
         setIsLoading(true);
-        const response = await api.get("/auth/staff/directory");
+        const response = await api.get("/admin/staff/directory");
         if (response.success) {
             setStaff(response.data as any[]);
         }
@@ -35,7 +35,7 @@ export default function StaffTab() {
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setMessage({ type: "info", text: "Processing Registration..." });
-        const response = await api.post("/auth/staff/create", formData);
+        const response = await api.post("/admin/staff/create", formData);
         if (response.success) {
             setMessage({ type: "success", text: "Admin created and credentials sent!" });
             setFormData({ name: "", email: "", phone: "", dob: "", idProofType: "adhar", idProofNumber: "", password: "" });

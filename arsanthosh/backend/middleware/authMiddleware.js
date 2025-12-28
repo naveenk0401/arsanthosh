@@ -19,8 +19,13 @@ const protect = catchAsync(async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Check if user still exists
-    const currentUser = await User.findById(decoded.id);
+    // Check if user exists in either collection
+    let currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+        const Admin = require("../models/Admin");
+        currentUser = await Admin.findById(decoded.id);
+    }
+
     if (!currentUser) {
         return next(new AppError("The user belonging to this token no longer exists.", 401));
     }

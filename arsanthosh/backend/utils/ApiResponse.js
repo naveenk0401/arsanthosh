@@ -1,16 +1,23 @@
 /**
  * Utility class for standardized API responses.
+ * Enforces strict property ordering as requested:
+ * success, message, data, error, pagination, filter
  */
 class ApiResponse {
-    constructor(statusCode, data, message = "Success") {
-        this.statusCode = statusCode;
-        this.success = statusCode < 400;
+    constructor(statusCode, data, message = "Success", pagination = undefined, filter = undefined) {
+        this.success = true;
+        this.message = message;
+        this.data = data;
         this.error = null;
-        this.data = typeof data === 'string' ? { message: data } : data;
+        if (pagination !== undefined) this.pagination = pagination;
+        if (filter !== undefined) this.filter = filter;
+        this.statusCode = statusCode; // Kept but usually handled by res.status
     }
 
-    static success(res, statusCode, data, message) {
-        return res.status(statusCode).json(new ApiResponse(statusCode, data, message));
+    static success(res, statusCode, data, message = "Success", pagination = undefined, filter = undefined) {
+        const response = new ApiResponse(statusCode, data, message, pagination, filter);
+        const { statusCode: status, ...jsonResponse } = response;
+        return res.status(status).json(jsonResponse);
     }
 }
 

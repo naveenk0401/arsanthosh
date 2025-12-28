@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 const path = require("path");
 
 // Load env
-dotenv.config({ path: path.join(__dirname, "backend", ".env") });
+dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/arsanthosh";
 
@@ -56,6 +56,7 @@ async function createSuperAdmin() {
             role: "super-admin",
             isVerified: true,
             isApproved: true,
+            isFirstLogin: false,
             secretKey
         });
 

@@ -12,12 +12,8 @@ app.use(cors());
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/projects", require("./routes/projectRoutes"));
-app.use("/api/inquiries", require("./routes/inquiryRoutes"));
-app.use("/api/products", require("./routes/productRoutes"));
-app.use("/api/reviews", require("./routes/reviewRoutes"));
-app.use("/api/stats", require("./routes/statsRoutes"));
-app.use("/api/upload", require("./routes/uploadRoutes"));
 app.use("/api/payments", require("./routes/paymentRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/activities", require("./routes/activityRoutes"));

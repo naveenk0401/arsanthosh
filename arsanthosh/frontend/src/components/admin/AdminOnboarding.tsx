@@ -31,7 +31,7 @@ export default function AdminOnboarding({ user, onComplete }: AdminOnboardingPro
         setError("");
 
         try {
-            const response = await api.post("/auth/staff/onboarding", { newPassword });
+            const response = await api.post("/admin/onboarding", { newPassword });
             if (response.success) {
                 setGeneratedKey((response.data as any).secretKey);
                 setStep(2);

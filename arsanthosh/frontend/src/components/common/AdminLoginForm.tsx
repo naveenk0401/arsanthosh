@@ -30,7 +30,7 @@ export default function AdminLoginForm() {
         setIsLoading(true);
         setError("");
 
-        const response = await api.post("/auth/login", {
+        const response = await api.post("/admin/login", {
             email: formData.email,
             password: formData.password,
             secretKey: formData.secretKey
@@ -42,12 +42,7 @@ export default function AdminLoginForm() {
             if (data.isFirstLogin) {
                 setOnboardingUser(data.user);
                 setIsOnboarding(true);
-                // We keep the token but don't call login() yet to keep restricted until onboarding done
-                // Actually, login() sets user in context. We'll call it after onboarding is done.
-                // But we need the token for onboarding API calls. 
-                // api helper usually uses localStorage token if exists. 
-                // Let's set the token manually for now if needed or just use it from response.
-                localStorage.setItem("ars_token", data.token);
+                localStorage.setItem("token", data.token);
                 return;
             }
 
@@ -58,7 +53,7 @@ export default function AdminLoginForm() {
             }
 
             login(data.user, data.token);
-            router.push("/admin");
+            router.push("/admin/dashboard");
         } else {
             setError(response.error?.message || "Invalid credentials");
             setIsLoading(false);
