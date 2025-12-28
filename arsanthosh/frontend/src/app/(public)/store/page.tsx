@@ -8,8 +8,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { api } from "@/utils/api";
 
-const categories = ["All", "Fittings", "Security", "Hardware", "Kitchen", "Decor"];
-const ITEMS_PER_PAGE = 6;
+const categories = ["All", "Doors", "Cupboards", "TV Units", "Pooja Units", "Plywoods", "Kitchen Baskets", "Chimney", "Door Handles", "Fevicol Gums"];
+const ITEMS_PER_PAGE = 12;
 
 export default function StorePage() {
     const [products, setProducts] = useState<any[]>([]);
@@ -28,7 +28,7 @@ export default function StorePage() {
 
     const fetchProducts = async () => {
         setIsLoading(true);
-        const response: any = await api.get("/products");
+        const response: any = await api.get("/products?limit=100");
         if (response.success) {
             setProducts(response.data);
         }
@@ -126,7 +126,7 @@ export default function StorePage() {
 
                                     <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--accent)] transition-colors">{product.name}</h3>
                                     <p className="text-[var(--muted)] text-xs md:text-sm leading-relaxed mb-4 max-w-xs line-clamp-2">{product.description}</p>
-                                    <p className="text-lg font-bold text-[var(--accent)]">₹{product.price.toLocaleString()}</p>
+                                    <p className="text-lg font-bold text-[var(--accent)]">Rs. {product.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                                 </Link>
                             ))}
                         </div>

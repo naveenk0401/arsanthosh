@@ -27,7 +27,7 @@ export default function StoreFeatured() {
                                 </div>
                             </div>
                             <h4 className="font-bold text-base md:text-lg group-hover:text-[var(--accent)] transition-colors">{item.name}</h4>
-                            <p className="text-[var(--accent)] font-bold text-sm md:text-base">{item.price}</p>
+                            <p className="text-[var(--accent)] font-bold text-sm md:text-base">Rs. {Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                         </Link>
                     ))}
                 </div>

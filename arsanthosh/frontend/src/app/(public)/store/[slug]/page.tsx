@@ -130,7 +130,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                         <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">{product.name}</h1>
 
                         <div className="flex items-center gap-4 mb-8">
-                            <p className="text-2xl font-bold text-[var(--accent)]">₹{product.price.toLocaleString()}</p>
+                            <p className="text-2xl font-bold text-[var(--accent)]">Rs. {product.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                             <div className="flex items-center gap-1">
                                 <div className="flex text-[var(--accent)] text-sm">
                                     {"★".repeat(Math.round(product.averageRating || 0))}
