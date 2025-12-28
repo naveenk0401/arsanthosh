@@ -47,4 +47,6 @@ const inquirySchema = new mongoose.Schema({
     timestamps: true
 });
 
+inquirySchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model("Inquiry", inquirySchema);

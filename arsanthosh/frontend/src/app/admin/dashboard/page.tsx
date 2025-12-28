@@ -41,30 +41,26 @@ export default function AdminDashboard() {
     }, [user, authLoading, router]);
 
     const fetchStats = async () => {
-        const [projRes, prodRes, inqRes, userRes, statsRes, actRes] = await Promise.all([
-            api.get("/projects"),
-            api.get("/products?status=all"),
-            api.get("/inquiries"),
-            api.get("/admin/users"),
-            user?.role === "super-admin" ? api.get("/admin/stats?range=monthly") : Promise.resolve({ success: false }),
-            api.get("/activities")
-        ]);
+        setIsLoading(true);
+        const statsRes = await api.get("/admin/stats?range=monthly");
 
-        const inqs = inqRes.success ? (inqRes.data as any[]) : [];
-        const monthlyStats = (statsRes as any).success ? ((statsRes as any).data as any).summary : null;
+        if (statsRes.success) {
+            const data = statsRes.data as any;
+            const overview = data.overview;
+            const monthlySummary = data.summary;
 
-        setStats({
-            projects: projRes.success ? (projRes.data as any[]).length : 0,
-            products: prodRes.success ? (prodRes.data as any[]).length : 0,
-            inquiries: inqs.length,
-            users: userRes.success ? (userRes.data as any[]).length : 0,
-            payments: monthlyStats?.totalRevenue || 0,
-            pendingConsults: inqs.filter(i => i.status === "New").length
-        });
+            setStats({
+                projects: overview.projects || 0,
+                products: overview.products || 0,
+                inquiries: overview.inquiries || 0,
+                users: overview.users || 0,
+                payments: monthlySummary?.totalRevenue || 0,
+                pendingConsults: overview.pendingConsults || 0
+            });
 
-        if (actRes.success) {
-            setActivities(actRes.data as any[]);
+            setActivities(overview.activities || []);
         }
+        setIsLoading(false);
     };
 
     const getRelativeTime = (dateString: string) => {

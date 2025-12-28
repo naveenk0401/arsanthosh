@@ -23,4 +23,7 @@ const orderSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
 }, { collection: "ars_orders" });
 
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ orderStatus: 1 });
+
 module.exports = mongoose.model("Order", orderSchema);

@@ -29,4 +29,6 @@ const activitySchema = new mongoose.Schema({
     collection: "ars_activities"
 });
 
+activitySchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model("Activity", activitySchema);

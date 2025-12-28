@@ -24,4 +24,6 @@ const userSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
 }, { collection: "ars_users" });
 
+userSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model("User", userSchema);

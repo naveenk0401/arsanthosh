@@ -1,6 +1,9 @@
 const adminService = require("../services/adminService");
 const ApiResponse = require("../utils/ApiResponse");
 const catchAsync = require("../utils/catchAsync");
+const Project = require("../models/Project");
+const User = require("../models/User");
+const Activity = require("../models/Activity");
 const Order = require("../models/Order");
 const Inquiry = require("../models/Inquiry");
 const Product = require("../models/Product");
@@ -69,92 +72,111 @@ const getDashboardStats = catchAsync(async (req, res) => {
             break;
     }
 
-    // 2. Revenue & Profit Aggregation
-    const revenueStats = await Order.aggregate([
-        {
-            $match: {
-                createdAt: { $gte: dateLimit },
-                orderStatus: { $in: ["Approved", "Shipped", "Delivered"] }
+    // Run all database operations in parallel for maximum performance
+    const [
+        revenueStats,
+        inquiryTrends,
+        clientSegmentStats,
+        inventoryMetrics,
+        salesVelocityData,
+        globalCounts,
+        recentActivities
+    ] = await Promise.all([
+        // A. Revenue & Profit Trends
+        Order.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: dateLimit },
+                    orderStatus: { $in: ["Approved", "Shipped", "Delivered"] }
+                }
+            },
+            {
+                $group: {
+                    _id: groupBy,
+                    revenue: { $sum: "$totalAmount" },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id": 1 } }
+        ]),
+        // B. Inquiry Flux Tracker
+        Inquiry.aggregate([
+            { $match: { createdAt: { $gte: dateLimit } } },
+            {
+                $group: {
+                    _id: groupBy,
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id": 1 } }
+        ]),
+        // C. Client Status Segments
+        Inquiry.aggregate([
+            { $match: { createdAt: { $gte: dateLimit } } },
+            {
+                $group: {
+                    _id: "$status",
+                    count: { $sum: 1 }
+                }
             }
-        },
-        {
-            $group: {
-                _id: groupBy,
-                revenue: { $sum: "$totalAmount" },
-                count: { $sum: 1 }
+        ]),
+        // D. Warehouse Inventory Value
+        Product.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalInventoryValue: { $sum: { $multiply: ["$price", "$stock"] } },
+                    totalStock: { $sum: "$stock" },
+                    totalReturned: { $sum: "$returnedCount" },
+                    totalDamaged: { $sum: "$damagedCount" }
+                }
             }
-        },
-        { $sort: { "_id": 1 } }
+        ]),
+        // E. Market Velocity Tracking
+        Order.aggregate([
+            { $match: { orderStatus: { $ne: "Rejected" } } },
+            { $unwind: "$items" },
+            {
+                $group: {
+                    _id: "$items.productId",
+                    name: { $first: "$items.name" },
+                    totalSold: { $sum: "$items.quantity" },
+                    revenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } }
+                }
+            },
+            { $sort: { totalSold: -1 } }
+        ]),
+        // F. Global Studio Metrics (Consolidated Counts)
+        Promise.all([
+            Project.countDocuments(),
+            Product.countDocuments({ status: "published" }),
+            Inquiry.countDocuments(),
+            User.countDocuments({ role: "user" }),
+            Inquiry.countDocuments({ status: "New" })
+        ]),
+        // G. System Lifecycle Feed
+        Activity.find()
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .populate("adminId", "name email")
     ]);
 
-    // 3. Inquiry Trend Aggregation
-    const inquiryStats = await Inquiry.aggregate([
-        { $match: { createdAt: { $gte: dateLimit } } },
-        {
-            $group: {
-                _id: groupBy,
-                count: { $sum: 1 }
-            }
-        },
-        { $sort: { "_id": 1 } }
-    ]);
+    const contactedClients = clientSegmentStats.find(s => s._id === "Contacted")?.count || 0;
+    const closedDeals = clientSegmentStats.find(s => s._id === "Closed")?.count || 0;
 
-    // 4. Client Conversion Stats
-    const clientStats = await Inquiry.aggregate([
-        { $match: { createdAt: { $gte: dateLimit } } },
-        {
-            $group: {
-                _id: "$status",
-                count: { $sum: 1 }
-            }
-        }
-    ]);
+    const fastMovers = salesVelocityData.slice(0, 5);
+    const slowMovers = salesVelocityData.slice(-5).reverse();
 
-    const contactedClients = clientStats.find(s => s._id === "Contacted")?.count || 0;
-    const closedDeals = clientStats.find(s => s._id === "Closed")?.count || 0;
-
-    // 5. Inventory Analytics
-    const productStats = await Product.aggregate([
-        {
-            $group: {
-                _id: null,
-                totalInventoryValue: { $sum: { $multiply: ["$price", "$stock"] } },
-                totalStock: { $sum: "$stock" },
-                totalReturned: { $sum: "$returnedCount" },
-                totalDamaged: { $sum: "$damagedCount" }
-            }
-        }
-    ]);
-
-    // 6. Product Velocity (Fast/Slow Movers)
-    const salesVelocity = await Order.aggregate([
-        { $match: { orderStatus: { $ne: "Rejected" } } },
-        { $unwind: "$items" },
-        {
-            $group: {
-                _id: "$items.productId",
-                name: { $first: "$items.name" },
-                totalSold: { $sum: "$items.quantity" },
-                revenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } }
-            }
-        },
-        { $sort: { totalSold: -1 } }
-    ]);
-
-    const fastMovers = salesVelocity.slice(0, 5);
-    const slowMovers = salesVelocity.slice(-5).reverse();
-
-    // 7. Profit Calculation
     const totalRevenue = revenueStats.reduce((acc, curr) => acc + curr.revenue, 0);
-    const totalProfit = salesVelocity.reduce((acc, curr) => {
+    const totalProfit = salesVelocityData.reduce((acc, curr) => {
         return acc + (curr.revenue * 0.35); // 35% margin baseline
     }, 0);
 
     return ApiResponse.success(res, 200, {
         revenueData: revenueStats,
-        inquiryData: inquiryStats,
+        inquiryData: inquiryTrends,
         inventory: {
-            summary: productStats[0] || { totalInventoryValue: 0, totalStock: 0, totalReturned: 0, totalDamaged: 0 },
+            summary: inventoryMetrics[0] || { totalInventoryValue: 0, totalStock: 0, totalReturned: 0, totalDamaged: 0 },
             fastMovers,
             slowMovers
         },
@@ -168,6 +190,14 @@ const getDashboardStats = catchAsync(async (req, res) => {
             netProfit: totalProfit,
             isProfitable: totalProfit > 0,
             revenueGrowth: 15.4
+        },
+        overview: {
+            projects: globalCounts[0],
+            products: globalCounts[1],
+            inquiries: globalCounts[2],
+            users: globalCounts[3],
+            pendingConsults: globalCounts[4],
+            activities: recentActivities
         }
     });
 });

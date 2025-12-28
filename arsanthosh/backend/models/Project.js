@@ -52,4 +52,6 @@ const projectSchema = new mongoose.Schema({
     timestamps: true // Adds createdAt and updatedAt automatically
 });
 
+projectSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model("Project", projectSchema);
