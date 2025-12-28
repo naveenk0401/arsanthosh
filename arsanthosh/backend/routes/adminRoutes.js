@@ -18,7 +18,7 @@ router.get("/stats", restrictTo("admin", "super-admin"), adminController.getDash
 router.post("/onboarding", validate(onboardingSchema), adminController.completeOnboarding);
 router.get("/users", restrictTo("admin", "super-admin"), adminController.getUsers);
 router.get("/staff/directory", restrictTo("admin", "super-admin"), adminController.getStaff);
-router.post("/upload", adminController.uploadFile); // Shared upload route for all admins
+router.post("/upload", upload.single("file"), adminController.uploadFile); // Shared upload route for all admins
 
 // Super Admin Only Routes
 router.use(restrictTo("super-admin"));
