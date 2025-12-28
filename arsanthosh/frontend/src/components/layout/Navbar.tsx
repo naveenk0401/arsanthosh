@@ -108,12 +108,14 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t p-6 space-y-4 shadow-xl">
           <nav className="flex flex-col gap-4">
+            <Link href="/" className="text-lg font-bold hover:text-[var(--accent)] transition-colors" onClick={() => setIsMenuOpen(false)}>Home</Link>
             <Link href="/about" className="text-lg font-bold hover:text-[var(--accent)] transition-colors" onClick={() => setIsMenuOpen(false)}>About</Link>
             <Link href="/services" className="text-lg font-bold hover:text-[var(--accent)] transition-colors" onClick={() => setIsMenuOpen(false)}>Services</Link>
             <Link href="/portfolio" className="text-lg font-bold hover:text-[var(--accent)] transition-colors" onClick={() => setIsMenuOpen(false)}>Portfolio</Link>
             <Link href="/store" className="text-lg font-bold hover:text-[var(--accent)] transition-colors" onClick={() => setIsMenuOpen(false)}>Store</Link>
             <Link href="/blog" className="text-lg font-bold hover:text-[var(--accent)] transition-colors" onClick={() => setIsMenuOpen(false)}>Blog</Link>
             <Link href="/contact" className="text-lg font-bold hover:text-[var(--accent)] transition-colors" onClick={() => setIsMenuOpen(false)}>Contact</Link>
+            <Link href="/ars-management-portal" className="text-lg font-bold hover:text-[var(--accent)] transition-colors" onClick={() => setIsMenuOpen(false)}>Admin Portal</Link>
           </nav>
           <div className="pt-4 border-t">
             {user ? (
