@@ -27,24 +27,37 @@ app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // Catch-all route for undefined paths
 app.all("*", (req, res, next) => {
-    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
 // Global Error Handling Middleware
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/arsanthosh";
+const MONGO_URI = process.env.MONGO_URI;
+
+// Masked URI for logging
+const maskedURI = MONGO_URI
+  ? MONGO_URI.replace(/\/\/.*@/, "//****:****@")
+  : "MISSING";
+console.log(`[SERVER_START] Attempting connection to: ${maskedURI}`);
 
 mongoose
-    .connect(MONGO_URI)
-    .then(() => {
-        console.log("Connected to MongoDB");
-        // Listen on all network interfaces (required for Render/Cloud)
-        app.listen(PORT, "0.0.0.0", () => {
-            console.log(`Server running on port ${PORT}`);
-        });
-    })
-    .catch((err) => console.log(err));
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log("✅ Successfully connected to MongoDB Atlas");
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err.message);
+    console.error(
+      "Check your IP Whitelist in Atlas (0.0.0.0/0 required for Render)"
+    );
+  });
+
+// Listen on all network interfaces (required for Render/Cloud)
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`[HEALTH_CHECK] Endpoint ready at 0.0.0.0:${PORT}`);
+});
 
 module.exports = app;
