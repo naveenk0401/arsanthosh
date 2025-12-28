@@ -17,6 +17,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     const [reviewRating, setReviewRating] = useState(5);
     const [reviewComment, setReviewComment] = useState("");
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+    const [showAllReviews, setShowAllReviews] = useState(false);
 
     const { addToCart } = useCart();
     const { user } = useAuth();
@@ -289,7 +290,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                     {/* Reviews List */}
                     {product.reviews && product.reviews.length > 0 ? (
                         <div className="space-y-6">
-                            {product.reviews.map((review: any) => (
+                            {(showAllReviews ? product.reviews : product.reviews.slice(0, 5)).map((review: any) => (
                                 <div key={review._id} className="bg-gray-50 p-6 rounded-sm border border-gray-100">
                                     <div className="flex justify-between items-start mb-4">
                                         <div>
@@ -303,6 +304,17 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                                     <p className="text-gray-600 italic leading-relaxed">"{review.comment}"</p>
                                 </div>
                             ))}
+                            
+                            {product.reviews.length > 5 && (
+                                <div className="text-center mt-8">
+                                    <button 
+                                        onClick={() => setShowAllReviews(!showAllReviews)}
+                                        className="text-[var(--accent)] font-bold uppercase text-xs tracking-widest hover:underline"
+                                    >
+                                        {showAllReviews ? "Show Less Reviews" : `See All ${product.reviews.length} Reviews`}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <p className="text-center text-gray-400 italic">No reviews yet. Be the first to review!</p>
@@ -313,20 +325,45 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                 {product.relatedProducts && product.relatedProducts.length > 0 && (
                     <div className="mt-24 pt-24 border-t border-gray-100">
                         <h2 className="text-2xl font-bold mb-10 text-center">You Might Also Like</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {product.relatedProducts.map((related: any) => (
-                                <Link href={`/store/${related.slug}`} key={related._id} className="group flex flex-col items-center text-center">
-                                    <div className="relative aspect-square w-full bg-white overflow-hidden rounded-sm shadow-sm mb-6">
-                                        <img
-                                            src={related.images?.[0] || "https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800&auto=format&fit=crop"}
-                                            alt={related.name}
-                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                        />
-                                    </div>
-                                    <h3 className="text-sm font-bold mb-1 group-hover:text-[var(--accent)] transition-colors">{related.name}</h3>
-                                    <p className="text-[var(--accent)] font-bold text-xs">₹{related.price.toLocaleString()}</p>
-                                </Link>
-                            ))}
+                        <div className="relative group/slider">
+                            {/* Controls */}
+                            <button 
+                                onClick={() => document.getElementById('rec-slider')?.scrollBy({ left: -300, behavior: 'smooth' })}
+                                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white shadow-lg p-3 rounded-full opacity-0 group-hover/slider:opacity-100 transition-opacity z-10 disabled:opacity-30"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            <button 
+                                onClick={() => document.getElementById('rec-slider')?.scrollBy({ left: 300, behavior: 'smooth' })}
+                                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white shadow-lg p-3 rounded-full opacity-0 group-hover/slider:opacity-100 transition-opacity z-10"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                            </button>
+
+                            <div id="rec-slider" className="flex gap-6 overflow-x-auto scrollbar-hide pb-8 scroll-smooth snap-x">
+                                {product.relatedProducts.map((related: any) => (
+                                    <Link 
+                                        href={`/store/${related.slug}`} 
+                                        key={related._id} 
+                                        className="group min-w-[280px] flex flex-col items-center text-center snap-start"
+                                    >
+                                        <div className="relative aspect-square w-full bg-white overflow-hidden rounded-sm shadow-sm mb-6">
+                                            <img
+                                                src={related.images?.[0] || "https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800&auto=format&fit=crop"}
+                                                alt={related.name}
+                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                            />
+                                            {related.stock < 5 && (
+                                                <div className="absolute top-2 right-2 bg-red-500 text-white text-[9px] font-bold px-2 py-1 rounded-sm uppercase tracking-widest">
+                                                    Low Stock
+                                                </div>
+                                            )}
+                                        </div>
+                                        <h3 className="text-sm font-bold mb-1 group-hover:text-[var(--accent)] transition-colors">{related.name}</h3>
+                                        <p className="text-[var(--accent)] font-bold text-xs">Rs. {related.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                    </Link>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}
