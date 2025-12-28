@@ -18,8 +18,11 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-white border-b">
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="block w-40">
-          <img src="/logo.jpg" alt="Architect Santhosh" className="h-12 w-auto object-contain" />
+        <Link href="/" className="block">
+          <div className="flex flex-col items-center">
+            <img src="/logo.jpg" alt="Architect Santhosh" className="h-10 w-auto object-contain mb-0.5" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-black">Architect Santhosh</span>
+          </div>
         </Link>
 
         {/* Desktop Menu */}
