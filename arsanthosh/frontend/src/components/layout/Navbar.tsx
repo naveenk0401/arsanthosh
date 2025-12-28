@@ -25,7 +25,7 @@ export default function Navbar() {
           <Link href="/about" className="hover:text-[var(--accent)] transition-colors">About</Link>
           <Link href="/services" className="hover:text-[var(--accent)] transition-colors">Services</Link>
           <Link href="/portfolio" className="hover:text-[var(--accent)] transition-colors">Portfolio</Link>
-          <Link href="/store" className="hover:text-[var(--accent)] transition-colors font-bold text-[var(--accent)]">Store</Link>
+          <Link href="/store" className="hover:text-[var(--accent)] transition-colors">Store</Link>
           <Link href="/blog" className="hover:text-[var(--accent)] transition-colors">Blog</Link>
           <Link href="/contact" className="hover:text-[var(--accent)] transition-colors">Contact</Link>
         </nav>
