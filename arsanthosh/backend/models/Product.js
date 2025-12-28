@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 
-const productSchema = new mongoose.Schema({
+const productSchema = new mongoose.Schema(
+  {
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true },
     description: { type: String, required: true },
@@ -19,7 +20,9 @@ const productSchema = new mongoose.Schema({
     averageRating: { type: Number, default: 0 },
     numReviews: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now },
-}, { collection: "ars_products" });
+  },
+  { collection: "ars_products" }
+);
 
 // Index for better search performance
 productSchema.index({ name: "text", description: "text" });
