@@ -37,6 +37,13 @@ const initiatePayment = catchAsync(async (req, res) => {
     cart,
   } = req.body;
 
+  console.log(`[PAYMENT_INIT] Initiating for ${email}, Amount: ${amount}`);
+  console.log(`[PAYMENT_INIT] Using PayU URL: ${PAYU_URL}`);
+  console.log(
+    `[PAYMENT_INIT] Key present: ${!!process.env
+      .PAYU_KEY}, Salt present: ${!!process.env.PAYU_SALT}`
+  );
+
   const txnid = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
   // 1. Create Pending Order
