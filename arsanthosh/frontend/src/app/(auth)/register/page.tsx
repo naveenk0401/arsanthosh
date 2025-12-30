@@ -8,13 +8,26 @@ import Footer from "@/components/layout/Footer";
 import { api } from "@/utils/api";
 
 export default function RegisterPage() {
-    const [formData, setFormData] = useState({ name: "", email: "", password: "", role: "user" });
+    const [formData, setFormData] = useState({ 
+        name: "", 
+        email: "", 
+        password: "", 
+        confirmPassword: "",
+        phone: "",
+        role: "user" 
+    });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (formData.password !== formData.confirmPassword) {
+            setError("Passwords do not match");
+            return;
+        }
+
         setIsLoading(true);
         setError("");
 
@@ -99,15 +112,41 @@ export default function RegisterPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-500">Password</label>
+                            <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-500">Phone Number</label>
                             <input
-                                type="password"
+                                type="tel"
                                 required
                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-100 outline-none focus:border-[var(--accent)] transition-colors text-sm"
-                                placeholder="••••••••"
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                placeholder="1234567890"
+                                value={formData.phone}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                             />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-500">Password</label>
+                                <input
+                                    type="password"
+                                    required
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 outline-none focus:border-[var(--accent)] transition-colors text-sm"
+                                    placeholder="••••••••"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-500">Confirm</label>
+                                <input
+                                    type="password"
+                                    required
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 outline-none focus:border-[var(--accent)] transition-colors text-sm"
+                                    placeholder="••••••••"
+                                    value={formData.confirmPassword}
+                                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                />
+                            </div>
                         </div>
 
                         <button

@@ -8,7 +8,14 @@ import { api } from "@/utils/api";
 import { useRouter } from "next/navigation";
 
 export default function AdminRegisterPage() {
-    const [formData, setFormData] = useState({ name: "", email: "", password: "", adminToken: "" });
+    const [formData, setFormData] = useState({ 
+        name: "", 
+        email: "", 
+        password: "", 
+        confirmPassword: "",
+        phone: "",
+        adminToken: "" 
+    });
 
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
@@ -16,10 +23,19 @@ export default function AdminRegisterPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (formData.password !== formData.confirmPassword) {
+            setError("Passwords do not match");
+            return;
+        }
+
         setIsLoading(true);
         setError("");
 
-        const response = await api.post("/auth/register", formData);
+        const response = await api.post("/auth/register", {
+            ...formData,
+            role: "admin"
+        });
         if (response.success) {
             router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`);
         } else {
@@ -71,15 +87,41 @@ export default function AdminRegisterPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Password</label>
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Phone Number</label>
                             <input
-                                type="password"
+                                type="tel"
                                 required
                                 className="w-full px-4 py-3 bg-[#222222] border border-gray-700 text-white outline-none focus:border-[var(--accent)] transition-colors"
-                                placeholder="••••••••"
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                placeholder="1234567890"
+                                value={formData.phone}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                             />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Password</label>
+                                <input
+                                    type="password"
+                                    required
+                                    className="w-full px-4 py-3 bg-[#222222] border border-gray-700 text-white outline-none focus:border-[var(--accent)] transition-colors"
+                                    placeholder="••••••••"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Confirm</label>
+                                <input
+                                    type="password"
+                                    required
+                                    className="w-full px-4 py-3 bg-[#222222] border border-gray-700 text-white outline-none focus:border-[var(--accent)] transition-colors"
+                                    placeholder="••••••••"
+                                    value={formData.confirmPassword}
+                                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                />
+                            </div>
                         </div>
 
                         <div className="space-y-2">
