@@ -172,8 +172,8 @@ export default function StorePage() {
                         Visit our studio for a physical experience of our premium collection.
                     </p>
                     <div className="flex flex-col sm:flex-row justify-center gap-6">
-                        <button className="border border-white/20 px-10 py-4 font-bold hover:bg-white/10 transition-all uppercase tracking-widest text-xs">Request Catalog</button>
-                        <button className="bg-[var(--accent)] text-white px-10 py-4 font-bold hover:bg-opacity-90 transition-all uppercase tracking-widest text-xs">Book Studio Visit</button>
+                        <Link href="/contact" className="border border-white/20 px-10 py-4 font-bold hover:bg-white/10 transition-all uppercase tracking-widest text-xs">Request Catalog</Link>
+                        <Link href="/contact" className="bg-[var(--accent)] text-white px-10 py-4 font-bold hover:bg-opacity-90 transition-all uppercase tracking-widest text-xs">Book Studio Visit</Link>
                     </div>
                 </div>
             </section>

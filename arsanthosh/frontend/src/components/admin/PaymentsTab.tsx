@@ -2,7 +2,9 @@
 import { useState, useEffect } from "react";
 
 export default function PaymentsTab() {
+    const [activeSubTab, setActiveSubTab] = useState<"orders" | "transactions">("orders");
     const [orders, setOrders] = useState<any[]>([]);
+    const [payments, setPayments] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -11,10 +13,12 @@ export default function PaymentsTab() {
     const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
-        fetchOrders();
-    }, []);
+        if (activeSubTab === "orders") fetchOrders();
+        else fetchPayments();
+    }, [activeSubTab]);
 
     const fetchOrders = async () => {
+        setIsLoading(true);
         try {
             const token = localStorage.getItem("token");
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/orders`, {
@@ -26,6 +30,24 @@ export default function PaymentsTab() {
             }
         } catch (error) {
             console.error("Failed to fetch orders", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchPayments = async () => {
+        setIsLoading(true);
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/payments`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) {
+                setPayments(data.data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch payments", error);
         } finally {
             setIsLoading(false);
         }
@@ -100,9 +122,22 @@ export default function PaymentsTab() {
     return (
         <div className="bg-white border border-gray-100 animate-in fade-in duration-500 shadow-sm relative">
             <div className="px-5 sm:px-8 py-6 border-b border-gray-50 bg-gray-50/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="font-bold text-lg font-display uppercase italic tracking-tight text-gray-900 leading-tight">Order Management</h2>
+                <h2 className="font-bold text-lg font-display uppercase italic tracking-tight text-gray-900 leading-tight">
+                    {activeSubTab === "orders" ? "Order Management" : "Payment Transactions"}
+                </h2>
                 <div className="flex gap-4 w-full sm:w-auto">
-                    <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest px-3 py-1 bg-white border border-gray-100 shadow-sm w-full sm:w-auto text-center">Live Orders</span>
+                    <button 
+                        onClick={() => setActiveSubTab("orders")}
+                        className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 border border-gray-100 shadow-sm transition-all ${activeSubTab === "orders" ? "bg-black text-white" : "bg-white text-gray-500 hover:text-black"}`}
+                    >
+                        Orders
+                    </button>
+                    <button 
+                        onClick={() => setActiveSubTab("transactions")}
+                        className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 border border-gray-100 shadow-sm transition-all ${activeSubTab === "transactions" ? "bg-black text-white" : "bg-white text-gray-500 hover:text-black"}`}
+                    >
+                        Transactions
+                    </button>
                 </div>
             </div>
 
@@ -111,84 +146,126 @@ export default function PaymentsTab() {
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-gray-50/50 border-b border-gray-50">
-                            <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Order ID</th>
-                            <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Customer</th>
-                            <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Details</th>
-                            <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Payment</th>
-                            <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Status</th>
-                            <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Actions</th>
+                            {activeSubTab === "orders" ? (
+                                <>
+                                    <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Order ID</th>
+                                    <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Customer</th>
+                                    <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Details</th>
+                                    <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Payment</th>
+                                    <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Status</th>
+                                    <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Actions</th>
+                                </>
+                            ) : (
+                                <>
+                                    <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">TXN ID</th>
+                                    <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Date</th>
+                                    <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Customer</th>
+                                    <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Amount</th>
+                                    <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Method</th>
+                                    <th className="px-6 py-5 text-[9px] uppercase font-black text-gray-600 tracking-[0.2em]">Status</th>
+                                </>
+                            )}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                         {isLoading ? (
-                            <tr><td colSpan={6} className="text-center py-8">Loading orders...</td></tr>
-                        ) : orders.length === 0 ? (
-                            <tr><td colSpan={6} className="text-center py-8">No orders found</td></tr>
-                        ) : orders.map((order) => (
-                            <tr key={order._id} className="hover:bg-gray-50/30 transition-colors">
-                                <td className="px-6 py-6 text-xs font-bold font-mono text-gray-600">{order.orderId}</td>
-                                <td className="px-6 py-6">
-                                    <div className="text-xs font-bold text-gray-900">{order.customerName}</div>
-                                    <div className="text-[10px] text-gray-500">{order.phone}</div>
-                                </td>
-                                <td className="px-6 py-6">
-                                    <div className="space-y-1">
-                                        {order.items && order.items.length > 0 ? (
-                                            order.items.slice(0, 2).map((item: any, idx: number) => (
-                                                <div key={idx} className="text-xs text-gray-600">
-                                                    <span className="font-bold text-black">{item.quantity}x</span> {item.name || "Product"}
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <span className="text-xs text-gray-400 italic">No items</span>
-                                        )}
-                                        {order.items && order.items.length > 2 && (
-                                            <div className="text-[10px] text-gray-400 italic">+{order.items.length - 2} more...</div>
-                                        )}
-                                    </div>
-                                    <div className="mt-2 text-[10px] text-gray-400 border-t border-gray-100 pt-1 truncate max-w-[200px]" title={order.address}>
-                                        {order.address}
-                                    </div>
-                                </td>
-                                <td className="px-6 py-6">
-                                    <div className="text-sm font-black text-gray-900">₹{order.totalAmount?.toLocaleString()}</div>
-                                    <div className="text-[10px] bg-gray-100 px-2 py-0.5 rounded inline-block mt-1">{order.paymentMethod}</div>
-                                </td>
-                                <td className="px-6 py-6">
-                                    <span className={`px-2 py-1 text-[8px] font-black uppercase tracking-[0.2em] rounded-[2px] border ${order.orderStatus === 'Approved' || order.orderStatus === 'Shipped' ? 'bg-green-50 border-green-100 text-green-600' :
-                                        order.orderStatus === 'Rejected' ? 'bg-red-50 border-red-100 text-red-600' :
+                            <tr><td colSpan={6} className="text-center py-8">Loading...</td></tr>
+                        ) : (activeSubTab === "orders" ? orders : payments).length === 0 ? (
+                            <tr><td colSpan={6} className="text-center py-8">No records found</td></tr>
+                        ) : activeSubTab === "orders" ? (
+                            // ORDERS ROW
+                            orders.map((order) => (
+                                <tr key={order._id} className="hover:bg-gray-50/30 transition-colors">
+                                    <td className="px-6 py-6 text-xs font-bold font-mono text-gray-600">{order.orderId}</td>
+                                    <td className="px-6 py-6">
+                                        <div className="text-xs font-bold text-gray-900">{order.customerName}</div>
+                                        <div className="text-[10px] text-gray-500">{order.phone}</div>
+                                    </td>
+                                    <td className="px-6 py-6">
+                                        <div className="space-y-1">
+                                            {order.items && order.items.length > 0 ? (
+                                                order.items.slice(0, 2).map((item: any, idx: number) => (
+                                                    <div key={idx} className="text-xs text-gray-600">
+                                                        <span className="font-bold text-black">{item.quantity}x</span> {item.name || "Product"}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <span className="text-xs text-gray-400 italic">No items</span>
+                                            )}
+                                            {order.items && order.items.length > 2 && (
+                                                <div className="text-[10px] text-gray-400 italic">+{order.items.length - 2} more...</div>
+                                            )}
+                                        </div>
+                                        <div className="mt-2 text-[10px] text-gray-400 border-t border-gray-100 pt-1 truncate max-w-[200px]" title={order.address}>
+                                            {order.address}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-6">
+                                        <div className="text-sm font-black text-gray-900">₹{order.totalAmount?.toLocaleString()}</div>
+                                        <div className="text-[10px] bg-gray-100 px-2 py-0.5 rounded inline-block mt-1">
+                                            {order.paymentMethod} 
+                                            <span className={`ml-1 ${order.paymentStatus === 'Completed' ? 'text-green-600' : 'text-yellow-600'}`}>({order.paymentStatus})</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-6">
+                                        <span className={`px-2 py-1 text-[8px] font-black uppercase tracking-[0.2em] rounded-[2px] border ${order.orderStatus === 'Approved' || order.orderStatus === 'Shipped' ? 'bg-green-50 border-green-100 text-green-600' :
+                                            order.orderStatus === 'Rejected' ? 'bg-red-50 border-red-100 text-red-600' :
+                                                'bg-yellow-50 border-yellow-100 text-yellow-600'
+                                            }`}>
+                                            {order.orderStatus}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-6 flex flex-col gap-2">
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    // Fetch fresh details
+                                                    const token = localStorage.getItem("token");
+                                                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/orders/${order._id}`, {
+                                                        headers: { Authorization: `Bearer ${token}` }
+                                                    });
+                                                    const data = await res.json();
+                                                    if (data.success) {
+                                                        setSelectedOrder(data.data);
+                                                    } else {
+                                                        alert("Failed to load details");
+                                                    }
+                                                } catch (e) { console.error(e); }
+                                            }}
+                                            className="p-2 border border-gray-200 rounded hover:bg-gray-100 transition-colors text-[10px] font-bold uppercase text-center w-full"
+                                        >
+                                            View
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            // PAYMENTS ROW
+                            payments.map((txn) => (
+                                <tr key={txn._id} className="hover:bg-gray-50/30 transition-colors">
+                                    <td className="px-6 py-6 text-xs font-bold font-mono text-gray-600 truncate max-w-[150px]" title={txn.transactionId}>{txn.transactionId}</td>
+                                    <td className="px-6 py-6 text-xs text-gray-500 font-mono">{new Date(txn.createdAt).toLocaleDateString()}</td>
+                                    <td className="px-6 py-6">
+                                        <div className="text-xs font-bold text-gray-900">{txn.customerName}</div>
+                                    </td>
+                                    <td className="px-6 py-6">
+                                        <div className="text-sm font-black text-gray-900">₹{txn.amount?.toLocaleString()}</div>
+                                    </td>
+                                    <td className="px-6 py-6">
+                                        <div className="text-[10px] bg-gray-100 px-2 py-0.5 rounded inline-block">{txn.method}</div>
+                                    </td>
+                                    <td className="px-6 py-6">
+                                        <span className={`px-2 py-1 text-[8px] font-black uppercase tracking-[0.2em] rounded-[2px] border ${
+                                            txn.status === 'verified' || txn.status === 'captured' ? 'bg-green-50 border-green-100 text-green-600' :
+                                            txn.status === 'failed' ? 'bg-red-50 border-red-100 text-red-600' :
                                             'bg-yellow-50 border-yellow-100 text-yellow-600'
                                         }`}>
-                                        {order.orderStatus}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-6 flex flex-col gap-2">
-                                    <button
-                                        onClick={async () => {
-                                            try {
-                                                // Fetch fresh details
-                                                const token = localStorage.getItem("token");
-                                                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/orders/${order._id}`, {
-                                                    headers: { Authorization: `Bearer ${token}` }
-                                                });
-                                                const data = await res.json();
-                                                if (data.success) {
-                                                    setSelectedOrder(data.data);
-                                                } else {
-                                                    alert("Failed to load order details");
-                                                }
-                                            } catch (e) {
-                                                console.error(e);
-                                                alert("Error loading order");
-                                            }
-                                        }}
-                                        className="p-2 border border-gray-200 rounded hover:bg-gray-100 transition-colors text-[10px] font-bold uppercase text-center w-full"
-                                    >
-                                        View Order
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                                            {txn.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -294,6 +371,7 @@ export default function PaymentsTab() {
                                         <div className="font-bold text-sm">
                                             {selectedOrder.paymentMethod} <span className="text-gray-400 font-normal">({selectedOrder.paymentStatus})</span>
                                         </div>
+                                        {selectedOrder.transactionId && <div className="text-[10px] font-mono text-gray-500">{selectedOrder.transactionId}</div>}
                                     </div>
                                     <div className="space-y-1">
                                         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Total Amount</p>

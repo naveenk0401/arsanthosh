@@ -20,6 +20,7 @@ app.use("/api/reviews", require("./routes/reviewRoutes"));
 app.use("/api/payments", require("./routes/paymentRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/activities", require("./routes/activityRoutes"));
+app.use("/api/subscribers", require("./routes/subscriberRoutes"));
 
 // Serve static files
 const path = require("path");

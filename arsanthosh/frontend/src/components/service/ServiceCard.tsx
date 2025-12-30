@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const services = [
   {
     title: "Home Interior Design",
@@ -30,7 +32,7 @@ export default function Services() {
             <h2 className="text-[10px] md:text-sm uppercase tracking-widest text-[var(--accent)] font-bold mb-2">Capabilities</h2>
             <h3 className="text-2xl md:text-4xl font-bold">Our Services</h3>
           </div>
-          <button className="text-[10px] md:text-sm font-bold border-b-2 border-[var(--primary)] pb-1 uppercase tracking-widest hover:text-[var(--accent)] hover:border-[var(--accent)] transition-colors">VIEW ALL SERVICES</button>
+          <Link href="/services"  className="text-[10px] md:text-sm font-bold border-b-2 border-[var(--primary)] pb-1 uppercase tracking-widest hover:text-[var(--accent)] hover:border-[var(--accent)] transition-colors">VIEW ALL SERVICES</Link>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
@@ -48,9 +50,9 @@ export default function Services() {
               <p className="text-xs md:text-sm text-[var(--muted)] leading-relaxed mb-4">
                 {service.desc}
               </p>
-              <button className="text-[10px] md:text-xs font-bold text-[var(--accent)] uppercase tracking-widest group-hover:translate-x-2 transition-transform inline-block">
+              <Link href="/services" className="text-[10px] md:text-xs font-bold text-[var(--accent)] uppercase tracking-widest group-hover:translate-x-2 transition-transform inline-block">
                 Explore More →
-              </button>
+              </Link>
             </div>
           ))}
         </div>

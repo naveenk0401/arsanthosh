@@ -1,12 +1,24 @@
 const express = require("express");
 const paymentController = require("../controllers/paymentController");
-const { protect, restrictTo, optionalAuth } = require("../middleware/authMiddleware");
+const {
+  protect,
+  restrictTo,
+  optionalAuth,
+} = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post("/", optionalAuth, paymentController.createPayment);
+// Public / Guest
+router.post("/initiate", paymentController.initiatePayment);
 
-// Protect admin routes
+// Webhook (PayU S2S) - No Auth needed, uses Hash verification
+router.post(
+  "/webhook",
+  express.urlencoded({ extended: true }),
+  paymentController.verifyPayment
+);
+
+// Admin / User
 router.use(protect);
 router.get("/my-payments", paymentController.getMyPayments);
 

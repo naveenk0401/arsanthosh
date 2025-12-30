@@ -126,7 +126,7 @@ export default function CartSidebar() {
                             </div>
                         </div>
                         <Link
-                            href="/checkout/payment"
+                            href="/checkout"
                             onClick={() => setIsCartOpen(false)}
                             className="block w-full bg-black text-white text-center py-4 font-bold uppercase tracking-widest text-xs hover:bg-[var(--accent)] transition-colors shadow-lg"
                         >

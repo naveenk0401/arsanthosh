@@ -5,11 +5,15 @@ import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
 import CartNotification from "@/components/common/CartNotification";
 import CartSidebar from "@/components/layout/CartSidebar";
+import NewsletterPopup from "@/components/common/NewsletterPopup";
 
 export const metadata: Metadata = {
-  title: "architech santhosh",
+  title: "Architect Santhosh",
   description:
     "Home & Office Interior Design, Modular Kitchen and Premium Hardware Store",
+  icons: {
+    icon: "/logo.jpg",
+  },
 };
 
 export default function RootLayout({
@@ -24,6 +28,7 @@ export default function RootLayout({
           <CartProvider>
             <CartNotification />
             <CartSidebar />
+            <NewsletterPopup />
             {children}
           </CartProvider>
         </AuthProvider>
