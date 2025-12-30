@@ -10,15 +10,39 @@ const {
  * Service to handle Email operations using Gmail API with OAuth2.
  */
 const createGmailClient = async () => {
+  const clientId = process.env.GMAIL_CLIENT_ID;
+  const clientSecret = process.env.GMAIL_CLIENT_SECRET;
+  const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    const missing = [];
+    if (!clientId) missing.push("GMAIL_CLIENT_ID");
+    if (!clientSecret) missing.push("GMAIL_CLIENT_SECRET");
+    if (!refreshToken) missing.push("GMAIL_REFRESH_TOKEN");
+    throw new Error(
+      `Missing Gmail API credentials: ${missing.join(
+        ", "
+      )}. Please add them to your environment variables.`
+    );
+  }
+
   const oauth2Client = new google.auth.OAuth2(
-    process.env.GMAIL_CLIENT_ID,
-    process.env.GMAIL_CLIENT_SECRET,
+    clientId,
+    clientSecret,
     "https://developers.google.com/oauthplayground"
   );
 
   oauth2Client.setCredentials({
-    refresh_token: process.env.GMAIL_REFRESH_TOKEN,
+    refresh_token: refreshToken,
   });
+
+  try {
+    // Explicitly refresh the token to ensure it's valid before passing to Gmail client
+    await oauth2Client.getAccessToken();
+  } catch (error) {
+    console.error("Failed to refresh Gmail access token:", error.message);
+    throw new Error(`Gmail Authentication failed: ${error.message}`);
+  }
 
   return google.gmail({ version: "v1", auth: oauth2Client });
 };
