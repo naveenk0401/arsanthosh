@@ -1,14 +1,20 @@
 const express = require("express");
 const orderController = require("../controllers/orderController");
-const { protect, restrictTo, optionalAuth } = require("../middleware/authMiddleware");
+const {
+  protect,
+  restrictTo,
+  optionalAuth,
+} = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 // Create Order (Public/User)
 router.post("/", optionalAuth, orderController.createOrder);
 
-// User History
+// User History / Lookup
 router.get("/my-orders", protect, orderController.getMyOrders);
+router.get("/transaction/:txnid", orderController.getOrderByTransactionId);
+router.get("/:id/invoice", orderController.downloadInvoice);
 
 // Admin Management
 router.use(protect, restrictTo("admin", "super-admin"));

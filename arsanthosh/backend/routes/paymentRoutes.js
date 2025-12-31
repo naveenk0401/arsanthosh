@@ -8,8 +8,15 @@ const {
 
 const router = express.Router();
 
-// Public / Guest
-router.post("/initiate", paymentController.initiatePayment);
+// Public / Guest / User
+router.post("/initiate", optionalAuth, paymentController.initiatePayment);
+
+// Callback from PayU S2S (POST)
+router.post(
+  "/callback",
+  express.urlencoded({ extended: true }),
+  paymentController.handleCallback
+);
 
 // Webhook (PayU S2S) - No Auth needed, uses Hash verification
 router.post(

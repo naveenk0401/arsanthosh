@@ -9,9 +9,14 @@ const orderSchema = new mongoose.Schema(
       required: false,
     }, // Nullable for guest
     customerName: { type: String, required: true },
-    email: { type: String },
-    phone: { type: String },
+    email: { type: String, required: true },
+    phone: { type: String, required: true },
     address: { type: String, required: true },
+    street: { type: String },
+    city: { type: String },
+    state: { type: String },
+    country: { type: String },
+    pincode: { type: String },
     items: [
       {
         productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
