@@ -75,7 +75,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
 
     const handleBuyNow = () => {
         handleAddToCart();
-        router.push("/checkout/payment");
+        router.push("/checkout");
     };
 
     const submitReview = async (e: React.FormEvent) => {
