@@ -6,8 +6,8 @@ const activityService = require("../services/activityService");
 const crypto = require("crypto");
 
 // PayU Configuration
-const PAYU_KEY = process.env.PAYU_KEY || "GtKFFx"; // Test Key
-const PAYU_SALT = process.env.PAYU_SALT || "eCwWELxi"; // Test Salt
+const PAYU_KEY = process.env.PAYU_KEY || "";
+const PAYU_SALT = process.env.PAYU_SALT || "";
 const PAYU_TEST_URL = "https://test.payu.in/_payment";
 const PAYU_PROD_URL = "https://secure.payu.in/_payment";
 
@@ -37,7 +37,6 @@ const generateHash = (params, salt) => {
     params.udf7 || "",
     params.udf8 || "",
     params.udf9 || "",
-    params.udf10 || "",
     salt,
   ].join("|");
 
