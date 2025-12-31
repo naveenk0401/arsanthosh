@@ -20,12 +20,26 @@ const PAYU_URL =
 
 // Helper: Generate Hash
 const generateHash = (params, salt) => {
-  // PayU formula: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|SALT)
-  const hashString = `${params.key}|${params.txnid}|${params.amount}|${
-    params.productinfo
-  }|${params.firstname}|${params.email}|${params.udf1 || ""}|${
-    params.udf2 || ""
-  }|${params.udf3 || ""}|${params.udf4 || ""}|${params.udf5 || ""}|${salt}`;
+  // PayU formula: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10|SALT)
+  const hashString = [
+    params.key,
+    params.txnid,
+    params.amount,
+    params.productinfo,
+    params.firstname,
+    params.email,
+    params.udf1 || "",
+    params.udf2 || "",
+    params.udf3 || "",
+    params.udf4 || "",
+    params.udf5 || "",
+    params.udf6 || "",
+    params.udf7 || "",
+    params.udf8 || "",
+    params.udf9 || "",
+    params.udf10 || "",
+    salt,
+  ].join("|");
 
   return crypto.createHash("sha512").update(hashString).digest("hex");
 };
