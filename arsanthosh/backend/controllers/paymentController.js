@@ -100,9 +100,17 @@ const initiatePayment = catchAsync(async (req, res) => {
     surl: `${apiUrl}/payments/callback`, // Success URL - Backend first
     furl: `${apiUrl}/payments/callback`, // Failure URL - Backend first
     udf1: userId || "Guest",
+    udf2: "",
+    udf3: "",
+    udf4: "",
+    udf5: "",
   };
 
   const hash = generateHash(params, PAYU_SALT);
+
+  console.log("[PAYU_KEY]", PAYU_KEY);
+  console.log("[PAYU_SALT]", PAYU_SALT);
+  console.log("[PAYU_GENERATED_HASH]", hash);
 
   // 2. Create Pending Payment Record
   await Payment.create({
