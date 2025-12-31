@@ -20,12 +20,14 @@ const PAYU_URL =
 
 // Helper: Generate Hash
 const generateHash = (params, salt) => {
-  // PayU formula: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||SALT)
+  // PayU formula: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT)
   const hashString = `${params.key}|${params.txnid}|${params.amount}|${
     params.productinfo
   }|${params.firstname}|${params.email}|${params.udf1 || ""}|${
     params.udf2 || ""
-  }|${params.udf3 || ""}|${params.udf4 || ""}|${params.udf5 || ""}||||${salt}`;
+  }|${params.udf3 || ""}|${params.udf4 || ""}|${
+    params.udf5 || ""
+  }||||||${salt}`;
 
   console.log("[PAYU_HASH_STRING]", hashString);
 
