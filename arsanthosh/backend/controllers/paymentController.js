@@ -20,15 +20,37 @@ const PAYU_URL =
 
 // Helper: Generate Hash
 const generateHash = (params, salt) => {
-  // PayU formula: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT)
-  const hashString = `${params.key}|${params.txnid}|${params.amount}|${
-    params.productinfo
-  }|${params.firstname}|${params.email}|${params.udf1 || ""}|${
-    params.udf2 || ""
-  }|${params.udf3 || ""}|${params.udf4 || ""}|${
-    params.udf5 || ""
-  }||||||${salt}`;
+  // PayU formula: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10|SALT)
+  const hashString = [
+    params.key,
+    params.txnid,
+    params.amount,
+    params.productinfo,
+    params.firstname,
+    params.email,
+    params.udf1 || "",
+    params.udf2 || "",
+    params.udf3 || "",
+    params.udf4 || "",
+    params.udf5 || "",
+    "", // udf6
+    "", // udf7
+    "", // udf8
+    "", // udf9
+    "", // udf10
+    salt,
+  ].join("|");
 
+  console.log("[PAYU_HASH_PARAMS]", {
+    key: params.key,
+    txnid: params.txnid,
+    amount: params.amount,
+    productinfo: params.productinfo,
+    firstname: params.firstname,
+    email: params.email,
+    udf1: params.udf1,
+    saltLength: salt ? salt.length : 0,
+  });
   console.log("[PAYU_HASH_STRING]", hashString);
 
   return crypto.createHash("sha512").update(hashString).digest("hex");
@@ -94,7 +116,7 @@ const initiatePayment = catchAsync(async (req, res) => {
   const params = {
     key: PAYU_KEY,
     txnid: txnid,
-    amount: String(amount),
+    amount: formattedAmount, // Using 2 decimal places to be consistent
     productinfo: productinfo || "Store Purchase",
     firstname: firstname,
     email: email,
@@ -110,8 +132,7 @@ const initiatePayment = catchAsync(async (req, res) => {
 
   const hash = generateHash(params, PAYU_SALT);
 
-  console.log("[PAYU_KEY]", PAYU_KEY);
-  console.log("[PAYU_SALT]", PAYU_SALT);
+  console.log("[PAYU_CONFIG]", { mode: process.env.PAYU_MODE, url: PAYU_URL });
   console.log("[PAYU_GENERATED_HASH]", hash);
 
   // 2. Create Pending Payment Record
