@@ -10,8 +10,13 @@ const PAYU_KEY = process.env.PAYU_KEY || "GtKFFx"; // Test Key
 const PAYU_SALT = process.env.PAYU_SALT || "eCwWELxi"; // Test Salt
 const PAYU_TEST_URL = "https://test.payu.in/_payment";
 const PAYU_PROD_URL = "https://secure.payu.in/_payment";
+
+// Priority: process.env.PAYU_MODE -> process.env.NODE_ENV
 const PAYU_URL =
-  process.env.NODE_ENV === "production" ? PAYU_PROD_URL : PAYU_TEST_URL;
+  process.env.PAYU_MODE === "production" ||
+  (process.env.NODE_ENV === "production" && process.env.PAYU_MODE !== "test")
+    ? PAYU_PROD_URL
+    : PAYU_TEST_URL;
 
 // Helper: Generate Hash
 const generateHash = (params, salt) => {
