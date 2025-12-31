@@ -116,7 +116,7 @@ const initiatePayment = catchAsync(async (req, res) => {
   const params = {
     key: PAYU_KEY,
     txnid: txnid,
-    amount: formattedAmount, // Using 2 decimal places to be consistent
+    amount: String(amount),
     productinfo: productinfo || "Store Purchase",
     firstname: firstname,
     email: email,
