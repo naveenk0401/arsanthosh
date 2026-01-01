@@ -2,29 +2,22 @@ const mongoose = require("mongoose");
 
 const paymentSchema = new mongoose.Schema(
   {
-    transactionId: { type: String, required: true, unique: true },
+    orderId: { type: String, required: true },
+    txnid: { type: String, required: true, unique: true },
     amount: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["pending", "verified", "failed"],
+      enum: ["pending", "success", "failed"],
       default: "pending",
     },
+    payuTxnId: { type: String },
+    fullPayuResponse: { type: mongoose.Schema.Types.Mixed },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: false,
-    }, // Store guest customers or users
+    },
     customerName: { type: String },
-    method: {
-      type: String,
-      enum: ["UPI", "Razorpay", "Card", "Cash", "PayU"],
-      default: "Razorpay",
-    },
-    type: {
-      type: String,
-      enum: ["Product", "Consultation", "Others"],
-      default: "Product",
-    },
     createdAt: { type: Date, default: Date.now },
   },
   { collection: "ars_payments" }

@@ -11,19 +11,14 @@ const router = express.Router();
 // Public / Guest / User
 router.post("/initiate", optionalAuth, paymentController.initiatePayment);
 
-// Callback from PayU S2S (POST)
-router.post(
-  "/callback",
-  express.urlencoded({ extended: true }),
-  paymentController.handleCallback
-);
+// Webhook & Callback (PayU POSTs/GETs) - Expects application/x-www-form-urlencoded
+const formParser = express.urlencoded({ extended: true });
 
-// Webhook (PayU S2S) - No Auth needed, uses Hash verification
-router.post(
-  "/webhook",
-  express.urlencoded({ extended: true }),
-  paymentController.verifyPayment
-);
+router.post("/webhook", formParser, paymentController.handleWebhook);
+router.get("/webhook", paymentController.handleWebhook);
+
+router.post("/callback", formParser, paymentController.handleCallback);
+router.get("/callback", paymentController.handleCallback);
 
 // Admin / User
 router.use(protect);

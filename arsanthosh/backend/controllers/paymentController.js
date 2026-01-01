@@ -1,26 +1,24 @@
+const crypto = require("crypto");
 const Payment = require("../models/Payment");
 const Order = require("../models/Order");
-const catchAsync = require("../utils/catchAsync");
 const ApiResponse = require("../utils/ApiResponse");
-const activityService = require("../services/activityService");
-const crypto = require("crypto");
+const catchAsync = require("../utils/catchAsync");
+const AppError = require("../utils/AppError");
 
 // PayU Configuration
-const PAYU_KEY = process.env.PAYU_KEY || "";
-const PAYU_SALT = process.env.PAYU_SALT || "";
-const PAYU_TEST_URL = "https://test.payu.in/_payment";
-const PAYU_PROD_URL = "https://secure.payu.in/_payment";
-
-// Priority: process.env.PAYU_MODE -> process.env.NODE_ENV
+const PAYU_KEY = process.env.PAYU_KEY?.trim();
+const PAYU_SALT = process.env.PAYU_SALT?.trim();
+const PAYU_MODE = (process.env.PAYU_MODE || "test").toLowerCase();
 const PAYU_URL =
-  process.env.PAYU_MODE === "production" ||
-  (process.env.NODE_ENV === "production" && process.env.PAYU_MODE !== "test")
-    ? PAYU_PROD_URL
-    : PAYU_TEST_URL;
+  PAYU_MODE === "production"
+    ? "https://secure.payu.in/_payment"
+    : "https://test.payu.in/_payment";
 
-// Helper: Generate Hash
-const generateHash = (params, salt) => {
-  // PayU formula: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10|SALT)
+/**
+ * Helper: Generate SHA-512 Hash for Payment Initiation
+ * Sequence: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10|salt
+ */
+const generateInitiateHash = (params) => {
   const hashString = [
     params.key,
     params.txnid,
@@ -33,215 +31,281 @@ const generateHash = (params, salt) => {
     params.udf3 || "",
     params.udf4 || "",
     params.udf5 || "",
-    "", // udf6
-    "", // udf7
-    "", // udf8
-    "", // udf9
-    "", // udf10
-    salt,
+    params.udf6 || "",
+    params.udf7 || "",
+    params.udf8 || "",
+    params.udf9 || "",
+    params.udf10 || "",
+    PAYU_SALT,
   ].join("|");
-
-  console.log("[PAYU_HASH_PARAMS]", {
-    key: params.key,
-    txnid: params.txnid,
-    amount: params.amount,
-    productinfo: params.productinfo,
-    firstname: params.firstname,
-    email: params.email,
-    udf1: params.udf1,
-    saltLength: salt ? salt.length : 0,
-  });
-  console.log("[PAYU_HASH_STRING]", hashString);
-
   return crypto.createHash("sha512").update(hashString).digest("hex");
 };
 
-const initiatePayment = catchAsync(async (req, res) => {
-  const {
-    amount,
-    productinfo,
-    firstname,
-    email,
-    phone,
-    address,
-    street,
-    city,
-    state,
-    country,
-    pincode,
-    cart,
-  } = req.body;
+/**
+ * Helper: Verify SHA-512 Hash for Payment Response (Reverse Hash)
+ * Sequence: salt|status|udf10|udf9|udf8|udf7|udf6|udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
+ */
+const verifyResponseHash = (body) => {
+  const hashString = [
+    PAYU_SALT,
+    body.status,
+    body.udf10 || "",
+    body.udf9 || "",
+    body.udf8 || "",
+    body.udf7 || "",
+    body.udf6 || "",
+    body.udf5 || "",
+    body.udf4 || "",
+    body.udf3 || "",
+    body.udf2 || "",
+    body.udf1 || "",
+    body.email,
+    body.firstname,
+    body.productinfo,
+    body.amount,
+    body.txnid,
+    body.key,
+  ].join("|");
 
-  const userId = req.user?._id;
-
-  console.log(`[PAYMENT_INIT] Initiating for ${email}, Amount: ${amount}`);
-
-  const txnid = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-
-  // 1. Create Pending Order
-  if (cart && cart.length > 0) {
-    await Order.create({
-      orderId: `ORD-${Date.now()}`,
-      userId: userId || null,
-      customerName: firstname,
-      email,
-      phone,
-      address,
-      street,
-      city,
-      state,
-      country,
-      pincode,
-      items: cart.map((item) => ({
-        productId: item._id || null,
-        name: item.name,
-        quantity: item.quantity,
-        price:
-          typeof item.price === "string"
-            ? parseFloat(item.price.replace(/[^\d.]/g, ""))
-            : item.price,
-        image: item.image,
-      })),
-      totalAmount: amount,
-      paymentMethod: "Card",
-      paymentStatus: "Pending",
-      transactionId: txnid,
-      orderStatus: "Pending",
-    });
-  }
-
-  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-
-  const params = {
-    key: PAYU_KEY,
-    txnid: txnid,
-    amount: String(amount),
-    productinfo: productinfo || "Store Purchase",
-    firstname: firstname,
-    email: email,
-    phone: phone || "",
-    surl: `${apiUrl}/payments/callback`, // Success URL - Backend first
-    furl: `${apiUrl}/payments/callback`, // Failure URL - Backend first
-    udf1: userId || "Guest",
-    udf2: "",
-    udf3: "",
-    udf4: "",
-    udf5: "",
-  };
-
-  const hash = generateHash(params, PAYU_SALT);
-
-  console.log("[PAYU_CONFIG]", { mode: process.env.PAYU_MODE, url: PAYU_URL });
-  console.log("[PAYU_GENERATED_HASH]", hash);
-
-  // 2. Create Pending Payment Record
-  await Payment.create({
-    transactionId: txnid,
-    amount,
-    method: "PayU",
-    status: "pending",
-    customerName: firstname,
-    userId: userId || null,
-    type: "Product",
-  });
-
-  return ApiResponse.success(
-    res,
-    200,
-    {
-      action: PAYU_URL,
-      params: { ...params, hash },
-    },
-    "Payment Initiated"
-  );
-});
-
-// PayU hits this after payment is complete (POST request)
-const handleCallback = catchAsync(async (req, res) => {
-  const { txnid, amount, productinfo, firstname, email, status, hash, udf1 } =
-    req.body;
-  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-
-  console.log(`[PAYMENT_CALLBACK] Status: ${status}, TXNID: ${txnid}`);
-
-  // salt|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
-  const hashString = `${PAYU_SALT}|${status}||||||${
-    udf1 || ""
-  }|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${PAYU_KEY}`;
+  console.log(`[PAYU_VERIFY_HASH_STRING] >>>${hashString}<<<`);
   const calculatedHash = crypto
     .createHash("sha512")
     .update(hashString)
     .digest("hex");
 
-  // In production, we'd strict-check the hash. For now, logging.
-  // if (calculatedHash !== hash) ...
+  console.log(
+    `[PAYU_VERIFY_HASH] Calculated: ${calculatedHash}, Received: ${body.hash}`
+  );
+  return calculatedHash === body.hash;
+};
 
-  if (status === "success") {
-    await Payment.findOneAndUpdate(
-      { transactionId: txnid },
-      { status: "verified" }
+/**
+ * Initiate Payment
+ * POST /api/payments/initiate
+ */
+const initiatePayment = catchAsync(async (req, res, next) => {
+  const { orderId, amount, customerName, email, phone, productInfo } = req.body;
+
+  if (!orderId || !customerName || !email || !amount) {
+    return next(new AppError("Please provide all required fields", 400));
+  }
+
+  if (!PAYU_KEY || !PAYU_SALT) {
+    return next(new AppError("PayU Credentials missing in environment", 500));
+  }
+
+  const formattedAmount = parseFloat(amount).toFixed(2);
+  const txnid = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+  const pInfo = (productInfo || `Order ${orderId}`).trim();
+  const fName = customerName.trim();
+  const mEmail = email.trim();
+
+  const paymentParams = {
+    key: PAYU_KEY,
+    txnid,
+    amount: formattedAmount,
+    productinfo: pInfo,
+    firstname: fName,
+    email: mEmail,
+    phone: (phone || "").trim(),
+    udf1: orderId,
+    udf2: "",
+    udf3: "",
+    udf4: "",
+    udf5: "",
+    udf6: "",
+    udf7: "",
+    udf8: "",
+    udf9: "",
+    udf10: "",
+  };
+
+  const hash = generateInitiateHash(paymentParams);
+
+  // Create Pending Payment Record
+  await Payment.create({
+    orderId,
+    txnid,
+    amount: parseFloat(formattedAmount),
+    status: "pending",
+    customerName: fName,
+    userId: req.user?._id || null,
+  });
+
+  const bUrl = process.env.BACKEND_URL || "http://localhost:5000/api";
+
+  const formData = {
+    ...paymentParams,
+    hash,
+    surl: `${bUrl}/payments/callback`,
+    furl: `${bUrl}/payments/callback`,
+    service_provider: "payu_paisa",
+  };
+
+  console.log(`[PAYU_INIT] TXNID: ${txnid}, Amount: ${formattedAmount}`);
+
+  return ApiResponse.success(
+    res,
+    200,
+    { action: PAYU_URL, formData },
+    "Payment initiation successful"
+  );
+});
+
+/**
+ * Handle browser callback (Redirection)
+ * POST /api/payments/callback
+ */
+const handleCallback = catchAsync(async (req, res, next) => {
+  const body = { ...req.body, ...req.query };
+  const { status, txnid } = body;
+  const fUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+
+  console.log(
+    `[PAYU_CALLBACK] Received for TXNID: ${txnid}, Status: ${status} (Method: ${req.method})`
+  );
+  console.log("[PAYU_CALLBACK_FULL_BODY] Keys:", Object.keys(body));
+
+  if (!verifyResponseHash(body)) {
+    console.error(`[PAYU_CALLBACK] Hash Mismatch!`);
+    // On GET mismatch, check if we at least have txnid to try and rescue the status?
+    // For now, let's keep it strict but informative.
+    return res.redirect(
+      `${fUrl}/payment/failure?txnid=${txnid || "error"}&error=hash_mismatch`
     );
-    const order = await Order.findOneAndUpdate(
-      { transactionId: txnid },
-      { paymentStatus: "Completed" },
+  }
+
+  // Update Status in DB (Fallback/Sync)
+  const payment = await Payment.findOne({ txnid });
+  const isSuccess = status && status.toLowerCase() === "success";
+
+  if (payment) {
+    payment.status = isSuccess ? "success" : "failed";
+    payment.payuTxnId = req.body.mihpayid;
+    payment.fullPayuResponse = req.body;
+    await payment.save();
+
+    const updatedOrder = await Order.findOneAndUpdate(
+      { orderId: payment.orderId },
+      {
+        paymentStatus: isSuccess ? "Completed" : "Failed",
+        transactionId: txnid,
+      },
       { new: true }
     );
 
-    if (order) {
-      await activityService.logActivity(
-        "PAYMENT",
-        `Order ${order.orderId} paid successfully (₹${amount})`,
-        { targetTab: "payments", targetId: order._id }
+    if (updatedOrder) {
+      console.log(
+        `[PAYU_CALLBACK] Updated Order ${payment.orderId} to ${updatedOrder.paymentStatus}`
+      );
+    } else {
+      console.error(
+        `[PAYU_CALLBACK] Order ${payment.orderId} NOT FOUND during update!`
       );
     }
-
-    return res.redirect(`${frontendUrl}/payment/success?orderId=${txnid}`);
   } else {
-    await Payment.findOneAndUpdate(
-      { transactionId: txnid },
-      { status: "failed" }
+    console.error(
+      `[PAYU_CALLBACK] Payment record NOT FOUND for TXNID: ${txnid}`
     );
-    await Order.findOneAndUpdate(
-      { transactionId: txnid },
-      { paymentStatus: "Failed" }
-    );
-    return res.redirect(`${frontendUrl}/payment/failure?txnid=${txnid}`);
+
+    // Attempt emergency order update if orderId is in body (PayU sometimes sends it in udf fields)
+    const possibleOrderId = req.body.udf1 || req.body.udf2; // Check if we stored it there
+    if (possibleOrderId && possibleOrderId.startsWith("ORD-")) {
+      await Order.findOneAndUpdate(
+        { orderId: possibleOrderId },
+        {
+          paymentStatus: isSuccess ? "Completed" : "Failed",
+          transactionId: txnid,
+        }
+      );
+    }
+  }
+
+  if (status === "success") {
+    return res.redirect(`${fUrl}/payment/success?txnid=${txnid}`);
+  } else {
+    return res.redirect(`${fUrl}/payment/failure?txnid=${txnid}`);
   }
 });
 
-const verifyPayment = catchAsync(async (req, res) => {
-  // Keeping this for potential webhook usage (S2S)
-  return res.status(200).json({ success: true, message: "Webhook endpoint" });
+/**
+ * PayU Webhook
+ * POST /api/payments/webhook
+ */
+const handleWebhook = catchAsync(async (req, res, next) => {
+  const { txnid, status, amount, mihpayid } = req.body;
+
+  console.log(`[PAYU_WEBHOOK] Received for TXNID: ${txnid}, Status: ${status}`);
+
+  if (!verifyResponseHash(req.body)) {
+    console.error("[PAYU_WEBHOOK] Hash Mismatch!");
+    return next(new AppError("Hash verification failed", 400));
+  }
+
+  const payment = await Payment.findOne({ txnid });
+  const isSuccess = status && status.toLowerCase() === "success";
+
+  if (payment) {
+    if (payment.status === "success") {
+      return ApiResponse.success(
+        res,
+        200,
+        null,
+        "Already processed as success"
+      );
+    }
+
+    payment.status = isSuccess ? "success" : "failed";
+    payment.payuTxnId = mihpayid;
+    payment.fullPayuResponse = req.body;
+    await payment.save();
+
+    await Order.findOneAndUpdate(
+      { orderId: payment.orderId },
+      {
+        paymentStatus: isSuccess ? "Completed" : "Failed",
+        transactionId: txnid,
+      }
+    );
+  } else {
+    // Emergency update if record is missing
+    const possibleOrderId = req.body.udf1;
+    if (possibleOrderId && possibleOrderId.startsWith("ORD-")) {
+      await Order.findOneAndUpdate(
+        { orderId: possibleOrderId },
+        {
+          paymentStatus: isSuccess ? "Completed" : "Failed",
+          transactionId: txnid,
+        }
+      );
+    }
+  }
+
+  return ApiResponse.success(res, 200, null, "Webhook processed");
 });
 
-// For Admin List
-const getAllPayments = catchAsync(async (req, res) => {
+/**
+ * Get All Payments (Admin)
+ */
+const getAllPayments = catchAsync(async (req, res, next) => {
   const payments = await Payment.find().sort({ createdAt: -1 });
-  return ApiResponse.success(
-    res,
-    200,
-    payments,
-    "Payments fetched successfully"
-  );
+  return ApiResponse.success(res, 200, payments, "Payments fetched");
 });
 
-const getMyPayments = catchAsync(async (req, res) => {
+/**
+ * Get My Payments (User)
+ */
+const getMyPayments = catchAsync(async (req, res, next) => {
   const payments = await Payment.find({ userId: req.user._id }).sort({
     createdAt: -1,
   });
-  return ApiResponse.success(
-    res,
-    200,
-    payments,
-    "My payments fetched successfully"
-  );
+  return ApiResponse.success(res, 200, payments, "My payments fetched");
 });
 
 module.exports = {
   initiatePayment,
-  verifyPayment,
   handleCallback,
+  handleWebhook,
   getAllPayments,
   getMyPayments,
 };

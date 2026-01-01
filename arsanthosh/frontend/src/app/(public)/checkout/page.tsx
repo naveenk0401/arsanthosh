@@ -36,7 +36,7 @@ export default function CheckoutPage() {
         e.preventDefault();
         setIsProcessing(true);
 
-        const { fullName, email, mobile, address, street, city, state, country, pincode } = formData;
+        const { fullName, email, mobile, address, city, state, pincode } = formData;
 
         if (!fullName || !email || !mobile || !address || !city || !state || !pincode) {
             alert("Please fill in all required shipping details");
@@ -44,44 +44,49 @@ export default function CheckoutPage() {
             return;
         }
 
+        const actualAmount = (cartTotal * 1.18).toFixed(2);
+        const orderId = `ORD-${Date.now()}`;
+
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/payments/initiate`;
+        console.log("[CHECKOUT_INIT] Calling:", apiUrl);
+
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/payments/initiate`, {
+            const payload = {
+                orderId,
+                amount: actualAmount,
+                customerName: fullName,
+                email,
+                phone: mobile,
+                productInfo: `Order ${orderId} for ${fullName}`
+            };
+            console.log("[CHECKOUT_INIT] Payload:", payload);
+
+            const response = await fetch(apiUrl, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${localStorage.getItem("token")}`
                 },
-                body: JSON.stringify({
-                    amount: cartTotal * 1.18,
-                    firstname: fullName,
-                    email,
-                    phone: mobile,
-                    address,
-                    street,
-                    city,
-                    state,
-                    country,
-                    pincode,
-                    productinfo: `Order for ${fullName}`,
-                    cart: cart.map(item => ({
-                        ...item,
-                        price: typeof item.price === "string" ? parseInt(item.price.replace(/[^\d]/g, "")) : item.price
-                    }))
-                })
+                body: JSON.stringify(payload)
             });
 
+            console.log("[CHECKOUT_INIT] Status:", response.status);
             const data = await response.json();
+            console.log("[CHECKOUT_INIT] Response Data:", data);
 
             if (data.success) {
+                console.log("[CHECKOUT_INIT] Success! Setting payuParams.");
                 setPayuParams(data.data);
-                // The form will auto-submit via useEffect when payuParams is set
             } else {
-                alert("Payment initiation failed: " + (data.message || "Unknown error"));
+                const errorMsg = data.error?.message || data.message || "Unknown error";
+                console.error("[CHECKOUT_INIT] Failed:", errorMsg);
+                alert("Payment initiation failed: " + errorMsg);
                 setIsProcessing(false);
             }
         } catch (error) {
-            console.error(error);
-            alert("Order failed due to network error");
+            console.error("[CHECKOUT_INIT] Error:", error);
+            const errorMsg = error instanceof Error ? error.message : "Network error";
+            alert("Order failed: " + errorMsg);
             setIsProcessing(false);
         }
     };
@@ -89,8 +94,14 @@ export default function CheckoutPage() {
     // Auto-submit PayU form when params are received
     useEffect(() => {
         if (payuParams) {
+            console.log("[CHECKOUT_AUTO_SUBMIT] payuParams received. Attempting to submit form.");
             const form = document.getElementById("payu_form") as HTMLFormElement;
-            if (form) form.submit();
+            if (form) {
+                console.log("[CHECKOUT_AUTO_SUBMIT] Form found. Submitting to:", form.action);
+                form.submit();
+            } else {
+                console.error("[CHECKOUT_AUTO_SUBMIT] Form NOT found!");
+            }
         }
     }, [payuParams]);
 
@@ -111,7 +122,7 @@ export default function CheckoutPage() {
             {/* PayU Hidden Form */}
             {payuParams && (
                 <form id="payu_form" action={payuParams.action} method="POST">
-                    {Object.entries(payuParams.params).map(([key, value]) => (
+                    {Object.entries(payuParams.formData).map(([key, value]) => (
                         <input key={key} type="hidden" name={key} value={value as string} />
                     ))}
                 </form>
