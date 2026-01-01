@@ -38,10 +38,7 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 
 // Masked URI for logging
-const maskedURI = MONGO_URI
-  ? MONGO_URI.replace(/\/\/.*@/, "//****:****@")
-  : "MISSING";
-console.log(`[SERVER_START] Attempting connection to: ${maskedURI}`);
+const maskedURI = MONGO_URI;
 
 mongoose
   .connect(MONGO_URI)
