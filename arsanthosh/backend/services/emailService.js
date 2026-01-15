@@ -38,9 +38,24 @@ const createGmailClient = async () => {
 
   try {
     // Explicitly refresh the token to ensure it's valid before passing to Gmail client
-    await oauth2Client.getAccessToken();
+    const { token } = await oauth2Client.getAccessToken();
+    console.log("Gmail access token refreshed successfully.");
   } catch (error) {
-    console.error("Failed to refresh Gmail access token:", error.message);
+    console.error("Failed to refresh Gmail access token:");
+    console.error("Error Message:", error.message);
+    console.error(
+      "Error Response Data:",
+      error.response
+        ? JSON.stringify(error.response.data, null, 2)
+        : "No response data"
+    );
+    console.error("Current Credentials (masking secrets):", {
+      clientId: clientId ? `${clientId.substring(0, 10)}...` : "missing",
+      clientSecret: clientSecret ? "present" : "missing",
+      refreshToken: refreshToken
+        ? `${refreshToken.substring(0, 5)}...`
+        : "missing",
+    });
     throw new Error(`Gmail Authentication failed: ${error.message}`);
   }
 

@@ -4,6 +4,10 @@ const activityService = require("./activityService");
 const emailService = require("./emailService");
 
 const createOrder = async (orderData, user) => {
+  console.log(
+    "[ORDER_SERVICE] Received orderData:",
+    JSON.stringify(orderData, null, 2)
+  );
   const {
     customerName,
     email,
@@ -15,30 +19,40 @@ const createOrder = async (orderData, user) => {
   } = orderData;
   const orderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-  const newOrder = await Order.create({
-    orderId,
-    userId: user ? user._id : null,
-    customerName,
-    email,
-    phone,
-    address,
-    items,
-    totalAmount,
-    paymentMethod,
-    paymentStatus: paymentMethod === "COD" ? "Pending" : "Completed",
-    orderStatus: "Pending",
-  });
+  try {
+    const newOrder = await Order.create({
+      orderId,
+      userId: user ? user._id : null,
+      customerName,
+      email,
+      phone,
+      address,
+      items,
+      totalAmount,
+      paymentMethod,
+      paymentStatus: "Pending",
+      orderStatus: "Pending",
+    });
 
-  await activityService.logActivity(
-    "PAYMENT",
-    `New Order #${newOrder.orderId} placed by ${customerName} (₹${totalAmount})`,
-    {
-      targetTab: "payments",
-      targetId: newOrder._id,
-    }
-  );
+    console.log(
+      "[ORDER_SERVICE] Order created successfully:",
+      newOrder.orderId
+    );
 
-  return newOrder;
+    await activityService.logActivity(
+      "PAYMENT",
+      `New Order #${newOrder.orderId} placed by ${customerName} (₹${totalAmount})`,
+      {
+        targetTab: "payments",
+        targetId: newOrder._id,
+      }
+    );
+
+    return newOrder;
+  } catch (error) {
+    console.error("[ORDER_SERVICE] Error creating order:", error);
+    throw new AppError(`Failed to create order: ${error.message}`, 500);
+  }
 };
 
 const getAllOrders = async () => {
