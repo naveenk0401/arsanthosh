@@ -12,7 +12,9 @@ export const metadata: Metadata = {
   description:
     "Home & Office Interior Design, Modular Kitchen and Premium Hardware Store",
   icons: {
-    icon: "/logo.jpg",
+    icon: "/favicon.ico",
+    shortcut: "/logo.jpg",
+    apple: "/logo.jpg",
   },
 };
 
