@@ -1,8 +1,41 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { products } from "@/data/products";
+
+interface Product {
+    _id: string;
+    id?: string;
+    name: string;
+    price: number;
+    category: string;
+    images: string[];
+}
 
 export default function StoreFeatured() {
-    const featuredItems = products.slice(0, 4);
+    const [featuredItems, setFeaturedItems] = useState<Product[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchFeaturedProducts = async () => {
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products?isFeatured=true&limit=4`);
+                const result = await response.json();
+                if (result.status === "success") {
+                    setFeaturedItems(result.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch featured products:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchFeaturedProducts();
+    }, []);
+
+    if (isLoading) return null; // Or a skeleton loader
+    if (featuredItems.length === 0) return null;
 
     return (
         <section className="py-16 md:py-24 bg-white">
@@ -15,10 +48,10 @@ export default function StoreFeatured() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                     {featuredItems.map((item) => (
-                        <Link href={`/store/${item.id}`} key={item.id} className="group">
+                        <Link href={`/store/${item._id}`} key={item._id} className="group">
                             <div className="relative aspect-square bg-gray-50 overflow-hidden mb-4 rounded-sm">
                                 <img
-                                    src={item.image}
+                                    src={item.images[0] || "/placeholder.png"}
                                     alt={item.name}
                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                 />
