@@ -4,8 +4,8 @@ require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
 const products = [
   {
-    name: "Premium Kitchen Roller Shutter (RTRS-101)",
-    slug: "kitchen-roller-shutter-rtrs-101",
+    name: "Premium Kitchen Roller Shutter",
+    slug: "kitchen-roller-shutter",
     description:
       "High-quality aluminum roller shutter for modern kitchen cabinets. Designed for smooth operation and space-saving efficiency.",
     features: [
@@ -29,8 +29,8 @@ const products = [
     isFeatured: true,
   },
   {
-    name: "Designer G Profile Handle SS-304",
-    slug: "designer-g-profile-handle-ss-304",
+    name: "Designer G Profile Handle",
+    slug: "designer-g-profile-handle",
     description:
       "Elegant G-profile handles crafted from high-grade Stainless Steel 304. Available in multiple luxury finishes to complement your cabinetry.",
     features: [
@@ -54,8 +54,8 @@ const products = [
     isFeatured: true,
   },
   {
-    name: "Smart Sensor Cabinet LED Light (PLED-002)",
-    slug: "smart-sensor-cabinet-led-light-pled-002",
+    name: "Smart Sensor Cabinet LED Light",
+    slug: "smart-sensor-cabinet-led-light",
     description:
       "Intelligent infrared sensor LED light for cabinets and wardrobes. Automatically activates on movement and cuts off after use to save energy.",
     features: [
@@ -109,9 +109,16 @@ const seedProducts = async () => {
       )
     );
 
-    console.log("Seeding products...");
-    await Product.insertMany(products);
-    console.log(`Successfully added ${products.length} products.`);
+    console.log("Seeding/Updating products...");
+    for (const product of products) {
+      const updatedProduct = await Product.findOneAndUpdate(
+        { slug: product.slug },
+        product,
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      console.log(`Synced product: ${updatedProduct.name}`);
+    }
+    console.log(`Successfully synced ${products.length} products.`);
 
     await mongoose.connection.close();
     process.exit(0);
