@@ -1,7 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useToast } from "@/context/ToastContext";
 
 export default function PaymentsTab() {
+    const { showToast } = useToast();
     const [activeSubTab, setActiveSubTab] = useState<"orders" | "transactions">("orders");
     const [orders, setOrders] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
@@ -75,6 +77,7 @@ export default function PaymentsTab() {
             if (res.ok) {
                 // Show success animation
                 setShowSuccess(true);
+                showToast("Order approved successfully!");
 
                 // Wait for 2 seconds before closing
                 setTimeout(() => {
@@ -84,11 +87,11 @@ export default function PaymentsTab() {
                     fetchOrders();
                 }, 2000);
             } else {
-                alert("Failed to approve order");
+                showToast("Failed to approve order", "error");
             }
         } catch (error) {
             console.error(error);
-            alert("An error occurred");
+            showToast("An error occurred", "error");
         } finally {
             setIsProcessing(false);
         }
@@ -109,6 +112,7 @@ export default function PaymentsTab() {
                 body: JSON.stringify({ status })
             });
             if (res.ok) {
+                showToast(`Order status updated to ${status}`);
                 fetchOrders();
                 if (selectedOrder && selectedOrder._id === orderId) {
                     setSelectedOrder({ ...selectedOrder, orderStatus: status });
@@ -116,6 +120,7 @@ export default function PaymentsTab() {
             }
         } catch (error) {
             console.error(error);
+            showToast("Failed to update status", "error");
         }
     };
 
@@ -228,7 +233,7 @@ export default function PaymentsTab() {
                                                     if (data.success) {
                                                         setSelectedOrder(data.data);
                                                     } else {
-                                                        alert("Failed to load details");
+                                                        showToast("Failed to load details", "error");
                                                     }
                                                 } catch (e) { console.error(e); }
                                             }}
@@ -314,11 +319,11 @@ export default function PaymentsTab() {
                                     if (data.success) {
                                         setSelectedOrder(data.data);
                                     } else {
-                                        alert("Failed to load order details");
+                                        showToast("Failed to load order details", "error");
                                     }
                                 } catch (e) {
                                     console.error(e);
-                                    alert("Error loading order");
+                                    showToast("Error loading order", "error");
                                 }
                             }}
                             className="w-full p-3 bg-black text-white rounded text-[10px] font-bold uppercase tracking-widest text-center"

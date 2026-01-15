@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { useToast } from "@/context/ToastContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 export default function CheckoutPage() {
     const { cartTotal, cart } = useCart();
+    const { showToast } = useToast();
     const router = useRouter();
     const [isProcessing, setIsProcessing] = useState(false);
     const [payuParams, setPayuParams] = useState<any>(null);
@@ -39,7 +41,7 @@ export default function CheckoutPage() {
         const { fullName, email, mobile, address, city, state, pincode } = formData;
 
         if (!fullName || !email || !mobile || !address || !city || !state || !pincode) {
-            alert("Please fill in all required shipping details");
+            showToast("Please fill in all required shipping details", "warning");
             setIsProcessing(false);
             return;
         }
@@ -80,13 +82,13 @@ export default function CheckoutPage() {
             } else {
                 const errorMsg = data.error?.message || data.message || "Unknown error";
                 console.error("[CHECKOUT_INIT] Failed:", errorMsg);
-                alert("Payment initiation failed: " + errorMsg);
+                showToast("Payment initiation failed: " + errorMsg, "error");
                 setIsProcessing(false);
             }
         } catch (error) {
             console.error("[CHECKOUT_INIT] Error:", error);
             const errorMsg = error instanceof Error ? error.message : "Network error";
-            alert("Order failed: " + errorMsg);
+            showToast("Order failed: " + errorMsg, "error");
             setIsProcessing(false);
         }
     };

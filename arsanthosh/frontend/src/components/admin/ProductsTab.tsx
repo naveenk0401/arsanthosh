@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/utils/api";
+import { useToast } from "@/context/ToastContext";
 import FileUpload from "./FileUpload";
 
 export default function ProductsTab() {
+    const { showToast } = useToast();
     const [products, setProducts] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
@@ -44,8 +46,9 @@ export default function ProductsTab() {
         const response = await api.delete(`/products/${id}`);
         if (response.success) {
             setProducts(prev => prev.filter(p => p._id !== id));
+            showToast("Product archived");
         } else {
-            alert("Failed to delete product");
+            showToast("Failed to delete product", "error");
         }
     };
 
@@ -96,11 +99,11 @@ export default function ProductsTab() {
         }
 
         if (response.success) {
-            alert(editingId ? "Inventory Updated!" : "Product Published!");
+            showToast(editingId ? "Inventory Updated!" : "Product Published!");
             resetForm();
             fetchProducts();
         } else {
-            alert(response.error?.message || "Operation failed");
+            showToast(response.error?.message || "Operation failed", "error");
         }
     };
 

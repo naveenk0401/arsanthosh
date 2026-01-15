@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { api } from "@/utils/api";
+import { useToast } from "@/context/ToastContext";
 
 export default function ContactForm() {
+    const { showToast } = useToast();
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -50,11 +52,11 @@ export default function ContactForm() {
                 // Auto-close after 5 seconds
                 setTimeout(() => setShowPopup(false), 5000);
             } else {
-                alert(response.error?.message || "Failed to send inquiry. Please try again.");
+                showToast(response.error?.message || "Failed to send inquiry. Please try again.", "error");
             }
         } catch (error) {
             console.error("Inquiry Error:", error);
-            alert("Something went wrong. Please try again later.");
+            showToast("Something went wrong. Please try again later.", "error");
         } finally {
             setLoading(false);
         }

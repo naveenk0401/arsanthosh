@@ -8,6 +8,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
 import { api } from "@/utils/api";
+import { useToast } from "@/context/ToastContext";
 
 export default function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
     const resolvedParams = use(params);
@@ -21,7 +22,10 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
 
     const { addToCart } = useCart();
     const { user } = useAuth();
+    const { showToast } = useToast();
     const router = useRouter();
+
+    const [activeImage, setActiveImage] = useState(0);
 
     useEffect(() => {
         fetchProduct();
@@ -32,6 +36,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
         const response: any = await api.get(`/products/slug/${resolvedParams.slug}`);
         if (response.success) {
             setProduct(response.data);
+            setActiveImage(0); // Reset to first image on load
         }
         setIsLoading(false);
     };
@@ -71,6 +76,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
             category: product.category,
             desc: product.description
         }, quantity);
+        showToast(`${product.name} added to cart!`);
     };
 
     const handleBuyNow = () => {
@@ -93,15 +99,20 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
         });
 
         if (response.success) {
-            alert("Review submitted successfully!");
+            showToast("Review submitted successfully!");
             setReviewComment("");
             setReviewRating(5);
             fetchProduct(); // Refresh reviews
         } else {
-            alert(response.error?.message || "Failed to submit review");
+            showToast(response.error?.message || "Failed to submit review", "error");
         }
         setIsSubmittingReview(false);
     };
+
+    const allMedia = [
+        ...(product.images || []).map((url: string) => ({ type: 'image', url })),
+        ...(product.videos || []).map((url: string) => ({ type: 'video', url }))
+    ];
 
     return (
         <main className="min-h-screen bg-[var(--bg)]">
@@ -109,15 +120,79 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
 
             <div className="max-w-7xl mx-auto px-6 py-12 md:py-24">
                 <div className="flex flex-col md:flex-row gap-12 lg:gap-24">
-                    {/* Left Side: Image */}
-                    <div className="flex-1">
-                        <div className="aspect-square bg-white rounded-sm overflow-hidden shadow-2xl sticky top-32">
-                            <img
-                                src={product.images?.[0] || "https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800&auto=format&fit=crop"}
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                            />
+                    {/* Left Side: Media Gallery */}
+                    <div className="flex-1 space-y-4">
+                        <div className="relative group aspect-square bg-white overflow-hidden sticky top-32">
+                            {allMedia.length > 0 ? (
+                                <>
+                                    <div className="w-full h-full relative">
+                                        {allMedia[activeImage].type === 'image' ? (
+                                            <img
+                                                src={allMedia[activeImage].url}
+                                                alt={product.name}
+                                                className="w-full h-full object-contain md:object-cover transition-all duration-700 ease-in-out"
+                                                key={allMedia[activeImage].url}
+                                            />
+                                        ) : (
+                                            <video
+                                                src={allMedia[activeImage].url}
+                                                controls
+                                                className="w-full h-full object-contain md:object-cover"
+                                                key={allMedia[activeImage].url}
+                                            />
+                                        )}
+                                    </div>
+
+                                    {/* Navigation Arrows */}
+                                    {allMedia.length > 1 && (
+                                        <>
+                                            <button
+                                                onClick={() => setActiveImage((prev) => (prev === 0 ? allMedia.length - 1 : prev - 1))}
+                                                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:scale-110 z-10"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                                            </button>
+                                            <button
+                                                onClick={() => setActiveImage((prev) => (prev === allMedia.length - 1 ? 0 : prev + 1))}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:scale-110 z-10"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                                            </button>
+                                        </>
+                                    )}
+                                </>
+                            ) : (
+                                <img
+                                    src="https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800&auto=format&fit=crop"
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                />
+                            )}
                         </div>
+
+                        {/* Thumbnails - Simpler and Flatter */}
+                        {allMedia.length > 1 && (
+                            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide pt-2">
+                                {allMedia.map((media, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setActiveImage(idx)}
+                                        className={`relative shrink-0 w-16 h-16 transition-all duration-300 ${activeImage === idx ? "opacity-100 border-b-2 border-black" : "opacity-40 hover:opacity-100"
+                                            }`}
+                                    >
+                                        {media.type === 'image' ? (
+                                            <img src={media.url} className="w-full h-full object-cover" alt="" />
+                                        ) : (
+                                            <div className="w-full h-full bg-black/5 flex items-center justify-center">
+                                                <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Side: Details */}

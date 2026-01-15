@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/utils/api";
+import { useToast } from "@/context/ToastContext";
 
 export default function ProjectsTab() {
+    const { showToast } = useToast();
     const [projects, setProjects] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
@@ -47,8 +49,9 @@ export default function ProjectsTab() {
         const response = await api.delete(`/projects/${id}`);
         if (response.success) {
             setProjects(prev => prev.filter(p => p._id !== id));
+            showToast("Project deleted successfully");
         } else {
-            alert("Failed to delete project");
+            showToast("Failed to delete project", "error");
         }
     };
 
@@ -58,7 +61,7 @@ export default function ProjectsTab() {
         // Validate Images
         const imageArray = formData.images.split(",").map(url => url.trim()).filter(url => url);
         if (imageArray.length < 4 || imageArray.length > 10) {
-            alert("Please provide between 4 and 10 images.");
+            showToast("Please provide between 4 and 10 images.", "warning");
             return;
         }
 
@@ -85,7 +88,7 @@ export default function ProjectsTab() {
 
         const response = await api.post("/projects", payload);
         if (response.success) {
-            alert("Project created successfully!");
+            showToast("Project created successfully!");
             setIsCreating(false);
             setFormData({
                 title: "", category: "Residential Architecture", description: "",
@@ -95,7 +98,7 @@ export default function ProjectsTab() {
             });
             fetchProjects();
         } else {
-            alert(response.error?.message || "Failed to create project");
+            showToast(response.error?.message || "Failed to create project", "error");
         }
     };
 

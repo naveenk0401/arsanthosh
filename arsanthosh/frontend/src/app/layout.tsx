@@ -6,6 +6,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import CartNotification from "@/components/common/CartNotification";
 import CartSidebar from "@/components/layout/CartSidebar";
 import NewsletterPopup from "@/components/common/NewsletterPopup";
+import { ToastProvider } from "@/context/ToastContext";
+import ToastContainer from "@/components/common/ToastContainer";
 
 export const metadata: Metadata = {
   title: "Architect Santhosh",
@@ -25,14 +27,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
+      <body suppressHydrationWarning>
         <AuthProvider>
-          <CartProvider>
-            <CartNotification />
-            <CartSidebar />
-            <NewsletterPopup />
-            {children}
-          </CartProvider>
+          <ToastProvider>
+            <CartProvider>
+              <ToastContainer />
+              <CartNotification />
+              <CartSidebar />
+              <NewsletterPopup />
+              {children}
+            </CartProvider>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

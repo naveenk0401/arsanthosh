@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/utils/api";
+import { useToast } from "@/context/ToastContext";
 
 export default function InquiriesTab() {
+    const { showToast } = useToast();
     const [inquiries, setInquiries] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -25,8 +27,9 @@ export default function InquiriesTab() {
         const response = await api.patch(`/inquiries/${id}`, { status: newStatus });
         if (response.success) {
             setInquiries(prev => prev.map(i => i._id === id ? { ...i, status: newStatus } : i));
+            showToast("Status updated");
         } else {
-            alert("Failed to update status");
+            showToast("Failed to update status", "error");
         }
     };
 

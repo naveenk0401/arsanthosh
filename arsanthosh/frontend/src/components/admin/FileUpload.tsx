@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { uploadFile, supabase } from "@/utils/supabase";
+import { useToast } from "@/context/ToastContext";
 
 interface FileUploadProps {
     onUploadComplete: (urls: string[]) => void;
@@ -20,6 +21,7 @@ export default function FileUpload({
     maxFiles = 10,
     maxSize = 50 * 1024 * 1024 // Default 50MB
 }: FileUploadProps) {
+    const { showToast } = useToast();
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -30,19 +32,19 @@ export default function FileUpload({
 
         // Validation limits
         if (maxFiles === 0) {
-            alert("You have reached the maximum number of files for this section.");
+            showToast("You have reached the maximum number of files for this section.", "warning");
             return;
         }
 
         if (files.length > maxFiles) {
-            alert(`You can only upload ${maxFiles} more file(s).`);
+            showToast(`You can only upload ${maxFiles} more file(s).`, "warning");
             return;
         }
 
         // Size validation
         for (let i = 0; i < files.length; i++) {
             if (files[i].size > maxSize) {
-                alert(`File ${files[i].name} exceeds the ${Math.round(maxSize / (1024 * 1024))}MB limit.`);
+                showToast(`File ${files[i].name} exceeds the ${Math.round(maxSize / (1024 * 1024))}MB limit.`, "warning");
                 return;
             }
         }
@@ -58,9 +60,10 @@ export default function FileUpload({
                 setProgress(Math.round(((i + 1) / total) * 100));
             }
             onUploadComplete(urls);
+            showToast(`${total} file(s) uploaded successfully!`);
         } catch (error: any) {
             console.error("Upload error:", error);
-            alert(error.message || "Upload failed. Make sure Supabase is configured correctly.");
+            showToast(error.message || "Upload failed. Make sure Supabase is configured correctly.", "error");
         } finally {
             setIsUploading(false);
             setProgress(0);

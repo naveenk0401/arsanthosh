@@ -1,6 +1,7 @@
 const Settings = require("../models/Settings");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const ApiResponse = require("../utils/ApiResponse");
 
 exports.getSocialLinks = catchAsync(async (req, res, next) => {
   let settings = await Settings.findOne({ key: "social_links" });
@@ -16,10 +17,7 @@ exports.getSocialLinks = catchAsync(async (req, res, next) => {
     };
   }
 
-  res.status(200).json({
-    status: "success",
-    data: settings.value,
-  });
+  return ApiResponse.success(res, 200, settings.value);
 });
 
 exports.updateSocialLinks = catchAsync(async (req, res, next) => {
@@ -34,8 +32,5 @@ exports.updateSocialLinks = catchAsync(async (req, res, next) => {
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
-  res.status(200).json({
-    status: "success",
-    data: settings.value,
-  });
+  return ApiResponse.success(res, 200, settings.value);
 });

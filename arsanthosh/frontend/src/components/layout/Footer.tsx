@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { api } from "@/utils/api";
 
 interface SocialLinks {
     instagramUrl: string;
@@ -13,14 +14,9 @@ export default function Footer() {
 
     useEffect(() => {
         const fetchSocialLinks = async () => {
-            try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings/social-links`);
-                const result = await response.json();
-                if (result.status === "success") {
-                    setSocialLinks(result.data);
-                }
-            } catch (error) {
-                console.error("Failed to fetch social links:", error);
+            const response = await api.get<SocialLinks>("/settings/social-links");
+            if (response.success) {
+                setSocialLinks(response.data);
             }
         };
 
