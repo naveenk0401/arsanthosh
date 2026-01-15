@@ -22,6 +22,7 @@ app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/activities", require("./routes/activityRoutes"));
 app.use("/api/subscribers", require("./routes/subscriberRoutes"));
 app.use("/api/settings", require("./routes/settingsRoutes"));
+app.use("/api/upload", require("./routes/uploadRoutes"));
 
 // Serve static files
 const path = require("path");

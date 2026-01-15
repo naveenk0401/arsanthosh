@@ -32,10 +32,13 @@ export const uploadFile = async (file: File, bucket: string = 'product-images') 
     formData.append("file", file);
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    
     try {
         const response = await fetch(`${apiUrl}/upload`, {
             method: "POST",
             body: formData,
+            headers: token ? { "Authorization": `Bearer ${token}` } : {}
         });
 
         const data = await response.json();
