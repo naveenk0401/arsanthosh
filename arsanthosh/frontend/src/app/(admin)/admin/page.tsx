@@ -17,6 +17,7 @@ import AnalyticsTab from "@/components/admin/AnalyticsTab";
 import UsersTab from "@/components/admin/UsersTab";
 import ConsultationTab from "@/components/admin/ConsultationTab";
 import InventoryTab from "@/components/admin/InventoryTab";
+import SettingsTab from "@/components/admin/SettingsTab";
 
 export default function AdminDashboard() {
     const { user, token, logout, isLoading: authLoading } = useAuth();
@@ -263,6 +264,7 @@ export default function AdminDashboard() {
                     {activeTab === "payments" && <PaymentsTab />}
                     {activeTab === "staff" && <StaffTab />}
                     {activeTab === "consultation" && <ConsultationTab />}
+                    {activeTab === "settings" && <SettingsTab />}
                     {activeTab === "analytics" && user.role === "super-admin" && <AnalyticsTab />}
                 </div>
             </main>
