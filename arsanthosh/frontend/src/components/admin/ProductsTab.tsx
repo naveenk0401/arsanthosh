@@ -46,7 +46,7 @@ export default function ProductsTab() {
         const response = await api.delete(`/products/${id}`);
         if (response.success) {
             setProducts(prev => prev.filter(p => p._id !== id));
-            showToast("Product archived");
+            showToast("Product deleted successfully");
         } else {
             showToast("Failed to delete product", "error");
         }
@@ -271,7 +271,7 @@ export default function ProductsTab() {
                             type="submit"
                             className="w-full bg-gray-900 text-white py-5 font-black uppercase tracking-[0.3em] text-xs hover:bg-[var(--primary)] transition-all shadow-xl"
                         >
-                            {editingId ? "Save Inventory Changes" : "Authorize Production & Publish"}
+                            {editingId ? "Save Product Changes" : "Authorize Production & Publish"}
                         </button>
                     </form>
                 </div>
@@ -340,7 +340,7 @@ export default function ProductsTab() {
                                         <td className="px-8 py-6 text-right">
                                             <div className="flex justify-end gap-6">
                                                 <button onClick={() => handleEdit(p)} className="text-[10px] font-bold text-gray-600 hover:text-[var(--primary)] uppercase tracking-widest transition-colors">Edit</button>
-                                                <button onClick={() => handleDelete(p._id)} className="text-[10px] font-bold text-red-300 hover:text-red-500 uppercase tracking-widest transition-colors">Archive</button>
+                                                <button onClick={() => handleDelete(p._id)} className="text-[10px] font-bold text-red-300 hover:text-red-500 uppercase tracking-widest transition-colors">Delete</button>
                                             </div>
                                         </td>
                                     </tr>
