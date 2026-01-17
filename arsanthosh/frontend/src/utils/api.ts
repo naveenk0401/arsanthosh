@@ -1,4 +1,16 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const getBaseUrl = () => {
+    if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+    if (typeof window !== "undefined") {
+        if (window.location.hostname === "localhost") {
+            return "http://localhost:5000/api";
+        }
+        // Fallback for arsanthosh.in
+        return "https://arsanthosh.onrender.com/api";
+    }
+    return "http://localhost:5000/api";
+};
+
+const BASE_URL = getBaseUrl();
 
 type ApiResponse<T> = {
     success: boolean;
